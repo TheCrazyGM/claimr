@@ -1,0 +1,97 @@
+/* Theme Colors */
+:root {
+  --rc-teal: #218c8d;
+  --rc-success: #198754;
+  --rc-light: #f9fafb;
+  --rc-border-radius: 0.5rem;
+}
+
+body {
+  background: var(--rc-light);
+}
+
+.navbar,
+.bg-primary,
+.btn-primary,
+.btn-info,
+.bg-info,
+.progress-bar.bg-info {
+  background-color: var(--rc-teal) !important;
+  border-color: var(--rc-teal) !important;
+}
+
+.btn-info {
+  color: #fff !important;
+}
+
+.progress-bar.bg-info {
+  color: #fff !important;
+}
+
+.text-info,
+.rc-teal {
+  color: var(--rc-teal) !important;
+}
+
+.card.border-info,
+.card.border-success {
+  border-width: 2px;
+}
+
+.card.border-info {
+  border-color: var(--rc-teal) !important;
+}
+
+.card.border-success {
+  border-color: var(--rc-success) !important;
+}
+
+/* Custom for RC Cost Card */
+.rc-cost-card {
+  border: 2px solid var(--rc-teal) !important;
+  border-radius: var(--rc-border-radius);
+}
+
+.display-6.fw-bold.rc-teal {
+  color: var(--rc-teal) !important;
+}
+
+/* Misc */
+#rc-bar .progress {
+  height: 1.25rem;
+  border-radius: var(--rc-border-radius);
+}
+
+#rc-bar .progress-bar {
+  font-size: 0.95rem;
+}
+
+/* Add your custom styles below this line */
+
+.footer a.text-light:hover {
+  color: #90e0ef;
+}
+
+#rc-bar {
+  max-width: 400px;
+}
+
+#claim-status {
+  max-width: 350px;
+}
+
+/* Add spinner utility for RC loading */
+#rc-loading.spinner-border {
+  vertical-align: middle;
+}
+
+/* Remove button stretch on claim area */
+.claim-btn-row .btn {
+  width: auto !important;
+}
+
+/* Footer */
+footer.footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e5e5e5;
+}

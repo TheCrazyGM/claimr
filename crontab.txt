@@ -1,0 +1,1 @@
+*/5 * * * * /home/thecrazygm/Project/claimr/run_log_rc_cost_cron.sh >> /home/thecrazygm/Project/claimr/cron.log 2>&1

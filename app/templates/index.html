@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mt-4 mb-4">
+    <div class="col-md-6 mx-auto">
+        <div class="card text-center rc-cost-card rounded shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Most Recent Estimated RC Claim Cost</h5>
+                <p class="h3 fw-bold rc-teal" id="most-recent-cost">No data available</p>
+<p class="mb-0"><small class="text-muted" id="most-recent-time"></small></p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card shadow-sm rounded">
+    <div class="card-body">
+        <h3 class="card-title mb-4">RC Cost Over Time</h3>
+        <canvas id="costChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- Claim Section -->
+<div class="row mt-4">
+    <div class="col-lg-7 col-md-8 mx-auto">
+        <div class="card border-success shadow-sm rounded">
+            <div class="card-body">
+                <h5 class="card-title mb-3 text-center">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Claim Account(s)
+                </h5>
+                <div class="row g-2 align-items-center justify-content-center mb-3">
+                    <div class="col-12 col-md-7">
+                        <input type="text" id="claim-username" class="form-control" placeholder="Hive username"
+                            autocomplete="username" aria-label="Hive username">
+                    </div>
+
+                </div>
+                <div class="d-flex flex-wrap justify-content-center mb-3">
+                    <button id="check-rc-btn" class="btn btn-info px-4 mb-2 w-100 w-md-auto" type="button"
+                        aria-label="Check Resource Credits">
+                        <i class="bi bi-lightning me-1" data-bs-toggle="tooltip" title="Check RC"></i>Check RC
+                        <span id="rc-loading" class="spinner-border spinner-border-sm ms-2 d-none" role="status"
+                            aria-hidden="true"></span>
+                    </button>
+                </div>
+                <div class="row g-2 justify-content-center align-items-center mb-2">
+                    <div class="col-12 col-md-auto mb-2 mb-md-0">
+                        <button id="claim-btn" class="btn btn-success" type="button">
+                            <i class="bi bi-check-circle me-1"></i>Claim One
+                        </button>
+                    </div>
+                    <div class="col-12 col-md-auto d-flex align-items-center gap-2">
+                        <input type="number" id="claim-multi-count" class="form-control" min="1" max="10" value="1"
+                            title="Number to claim" placeholder="Count" style="max-width:90px;">
+                        <button id="claim-multi-btn" class="btn btn-outline-success" type="button">
+                            <i class="bi bi-collection me-1"></i>Claim Multiple
+                        </button>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <div id="claim-status" class="mt-2" style="max-width: 350px;"></div>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <div id="rc-bar" class="w-100 mt-2" style="max-width: 400px;"></div>
+                </div>
+                <div class="mt-2 text-center">
+                    <small class="text-muted">You will sign with Hive Keychain</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
+{% endblock %}
