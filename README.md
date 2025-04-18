@@ -37,7 +37,6 @@ Create a `.env` file (or set in your environment):
 
 ```env
 RC_COST_DB_PATH=sqlite:///rc_costs.db
-ACTIVE_WIF=your_hive_active_wif_key
 ```
 
 ### 4. Initialize the Database
