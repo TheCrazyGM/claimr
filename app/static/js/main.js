@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         const op = [
             'claim_account',
-            { creator: username, fee: null, extensions: [] }
+            { creator: username, fee: '0.000 HIVE', extensions: [] }
         ];
         let ops = single ? [op] : [];
         if (!single) {
@@ -117,19 +117,119 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         showStatus('Requesting signature from Hive Keychain...', 'info');
         claimInProgress = true;
-        window.hive_keychain.requestBroadcast(
-            username,
-            ops,
-            'Active',
-            function (response) {
-                claimInProgress = false;
-                if (response.success) {
-                    showStatus('Claim broadcast sent! Check Hive Engine for account credit.', 'success');
-                } else {
-                    showStatus('Keychain error: ' + (response.message || 'Unknown error'), 'danger');
-                }
-            }
-        );
+        // Store the RC before claiming to calculate the difference later
+        let rcBefore = lastRcCheck;
+        let estimatedCost = 0;
+        
+        // Get the most recent estimated cost before claiming
+        fetch('/api/rc_cost_data')
+            .then(r => r.json())
+            .then(rcData => {
+                estimatedCost = rcData.most_recent_cost || 0;
+                
+                // Proceed with the claim operation
+                window.hive_keychain.requestBroadcast(
+                    username,
+                    ops,
+                    'Active',
+                    function (response) {
+                        claimInProgress = false;
+                        if (response.success) {
+                            showStatus('Claim broadcast sent! Checking RC usage...', 'success');
+                            
+                            // Wait a moment for the blockchain to process the transaction
+                            setTimeout(() => {
+                                // Check RC after the claim
+                                fetch(`/api/rc/${encodeURIComponent(username)}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success && data.rc && typeof data.rc.current_mana === 'number') {
+                                            const rcAfter = data.rc.current_mana;
+                                            const rcUsed = rcBefore - rcAfter;
+                                            // Use more precise calculation for large numbers
+                                            const percentDiff = estimatedCost > 0 ? parseFloat(((rcUsed / estimatedCost) * 100).toFixed(2)) : 0;
+                                            
+                                            // Update the last RC check value
+                                            lastRcCheck = rcAfter;
+                                            
+                                            // Update UI with RC usage information
+                                            showStatus(`Claim successful! Check the RC usage details below.`, 'success');
+                                            
+                                            // Display detailed RC usage comparison in the dedicated section
+                                            const rcComparisonEl = document.getElementById('rc-usage-comparison');
+                                            rcComparisonEl.innerHTML = `
+                                              <div class="card border-info shadow-sm rounded">
+                                                <div class="card-body p-3">
+                                                  <h6 class="card-title mb-2">RC Usage Details</h6>
+                                                  <div class="d-flex justify-content-between mb-1">
+                                                    <span>RC Before Claim:</span>
+                                                    <span class="fw-bold">${rcBefore.toLocaleString()}</span>
+                                                  </div>
+                                                  <div class="d-flex justify-content-between mb-1">
+                                                    <span>RC After Claim:</span>
+                                                    <span class="fw-bold">${rcAfter.toLocaleString()}</span>
+                                                  </div>
+                                                  <div class="d-flex justify-content-between mb-1">
+                                                    <span>Actual RC Used:</span>
+                                                    <span class="fw-bold text-primary">${rcUsed.toLocaleString()}</span>
+                                                  </div>
+                                                  <div class="d-flex justify-content-between">
+                                                    <span>Estimated RC Cost:</span>
+                                                    <span class="fw-bold">${estimatedCost.toLocaleString()}</span>
+                                                  </div>
+                                                  <div class="progress mt-2" title="Actual vs Estimated">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: ${Math.min(percentDiff, 100)}%" aria-valuenow="${percentDiff}" aria-valuemin="0" aria-valuemax="100">${percentDiff}%</div>
+                                                  </div>
+                                                  <div class="text-center small text-muted mt-1">Actual RC used is ${percentDiff}% of estimated cost</div>
+                                                </div>
+                                              </div>
+                                            `;
+                                            
+                                            // Update the RC bar
+                                            const maxRc = data.rc.max_mana;
+                                            const percent = Math.round(100 * rcAfter / maxRc);
+                                            document.getElementById('rc-bar').innerHTML = `
+                                              <div class='progress' title='${rcAfter.toLocaleString()} / ${maxRc.toLocaleString()}'>
+                                                <div class='progress-bar bg-info' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'>${percent}%</div>
+                                              </div>
+                                              <div class='text-center small text-muted mt-1'>${rcAfter.toLocaleString()} / ${maxRc.toLocaleString()} RC</div>
+                                            `;
+                                            
+                                            // Update claim buttons based on new RC value
+                                            if (estimatedCost > 0) {
+                                                rcSufficient = rcAfter >= estimatedCost;
+                                                updateClaimButtons();
+                                            }
+                                        } else {
+                                            showStatus('Claim successful! Could not check updated RC: ' + (data.message || 'Unknown error'), 'success');
+                                        }
+                                    })
+                                    .catch(err => {
+                                        showStatus('Claim successful! Error checking updated RC: ' + err, 'success');
+                                    });
+                            }, 3000); // Wait 3 seconds for blockchain to process
+                        } else {
+                            showStatus('Keychain error: ' + (response.message || 'Unknown error'), 'danger');
+                        }
+                    }
+                );
+            })
+            .catch(err => {
+                // If we can't get the estimated cost, proceed with the claim anyway
+                window.hive_keychain.requestBroadcast(
+                    username,
+                    ops,
+                    'Active',
+                    function (response) {
+                        claimInProgress = false;
+                        if (response.success) {
+                            showStatus('Claim broadcast sent! Check Hive Engine for account credit.', 'success');
+                        } else {
+                            showStatus('Keychain error: ' + (response.message || 'Unknown error'), 'danger');
+                        }
+                    }
+                );
+            });
     }
 
     checkRcBtn.addEventListener('click', function () {
@@ -137,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!username) {
             showStatus('Please enter your Hive username to check RC.', 'warning');
             document.getElementById('rc-bar').innerHTML = '';
+            document.getElementById('rc-usage-comparison').innerHTML = '';
             return;
         }
         showStatus('Checking RC for ' + username + '...', 'info');
