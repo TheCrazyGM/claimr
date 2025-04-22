@@ -111,15 +111,16 @@ document.addEventListener("DOMContentLoaded", function () {
             { creator: username, fee: '0.000 HIVE', extensions: [] }
         ];
         let ops = single ? [op] : [];
+        const claimCount = single ? 1 : (parseInt(countInput.value) || 2);
         if (!single) {
-            const count = parseInt(countInput.value) || 2;
-            for (let i = 0; i < count; i++) ops.push(op);
+            for (let i = 0; i < claimCount; i++) ops.push(op);
         }
         showStatus('Requesting signature from Hive Keychain...', 'info');
         claimInProgress = true;
         // Store the RC before claiming to calculate the difference later
         let rcBefore = lastRcCheck;
         let estimatedCost = 0;
+        let totalClaimCount = claimCount;
 
         // Get the most recent estimated cost before claiming
         fetch('/api/rc_cost_data')
@@ -146,8 +147,10 @@ document.addEventListener("DOMContentLoaded", function () {
                                         if (data.success && data.rc && typeof data.rc.current_mana === 'number') {
                                             const rcAfter = data.rc.current_mana;
                                             const rcUsed = rcBefore - rcAfter;
+                                            // Scale the estimated cost based on the number of claims
+                                            const totalEstimatedCost = estimatedCost * totalClaimCount;
                                             // Use more precise calculation for large numbers
-                                            const percentDiff = estimatedCost > 0 ? parseFloat(((rcUsed / estimatedCost) * 100).toFixed(2)) : 0;
+                                            const percentDiff = totalEstimatedCost > 0 ? parseFloat(((rcUsed / totalEstimatedCost) * 100).toFixed(2)) : 0;
 
                                             // Update the last RC check value
                                             lastRcCheck = rcAfter;
@@ -173,9 +176,9 @@ document.addEventListener("DOMContentLoaded", function () {
                                                     <span>Actual RC Used:</span>
                                                     <span class="fw-bold text-primary">${rcUsed.toLocaleString()}</span>
                                                   </div>
-                                                  <div class="d-flex justify-content-between">
-                                                    <span>Estimated RC Cost:</span>
-                                                    <span class="fw-bold">${estimatedCost.toLocaleString()}</span>
+                                                  <div class="d-flex justify-content-between mb-1">
+                                                    <span>Estimated RC Cost (${totalClaimCount} claim${totalClaimCount > 1 ? 's' : ''}):</span>
+                                                    <span class="fw-bold">${totalEstimatedCost.toLocaleString()}</span>
                                                   </div>
                                                   <div class="progress mt-2" title="Actual vs Estimated">
                                                     <div class="progress-bar bg-success" role="progressbar" style="width: ${Math.min(percentDiff, 100)}%" aria-valuenow="${percentDiff}" aria-valuemin="0" aria-valuemax="100">${percentDiff}%</div>
