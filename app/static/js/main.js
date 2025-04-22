@@ -265,13 +265,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             if (maxClaims > 0) {
                                 rcSufficient = true;
-                                // Only set value if user's input exceeds new max
-                                if (parseInt(countInput.value) > maxClaims) {
-                                    countInput.value = maxClaims;
-                                }
+                                // Always set the value to maxClaims when checking RC
+                                countInput.value = maxClaims;
                                 countInput.title = `You can claim up to ${maxClaims} account(s) with your RC.`;
                             } else {
-                                if (parseInt(countInput.value) < 1) countInput.value = 1;
+                                countInput.value = 1;
                                 rcSufficient = false;
                                 countInput.title = 'Not enough RC to claim more than 1 account.';
                             }
@@ -313,7 +311,13 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     });
     countInput.addEventListener('input', function () {
-        rcSufficient = false;
+        // Don't disable buttons when user changes the number manually
+        // Just validate that the input is within valid range (1 to max)
+        const currentValue = parseInt(countInput.value) || 0;
+        const maxValue = parseInt(countInput.max) || 1;
+        
+        // RC is sufficient as long as we have a valid number within range
+        rcSufficient = currentValue >= 1 && currentValue <= maxValue && lastRcCheck !== null;
         updateClaimButtons();
     });
     usernameInput.addEventListener('input', function () {
