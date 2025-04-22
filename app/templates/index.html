@@ -6,7 +6,7 @@
             <div class="card-body">
                 <h5 class="card-title mb-2">Most Recent Estimated RC Claim Cost</h5>
                 <p class="h3 fw-bold rc-teal" id="most-recent-cost">No data available</p>
-<p class="mb-0"><small class="text-muted" id="most-recent-time"></small></p>
+                <p class="mb-0"><small class="text-muted" id="most-recent-time"></small></p>
             </div>
         </div>
     </div>
@@ -49,10 +49,16 @@
                     </div>
                     <div class="col-12 col-md-auto d-flex align-items-center gap-2">
                         <input type="number" id="claim-multi-count" class="form-control" min="1" max="10" value="1"
-                            title="Number to claim" placeholder="Count" style="max-width:90px;">
+                            title="Number to claim" placeholder="Count (1 to max)" style="max-width:90px;">
                         <button id="claim-multi-btn" class="btn btn-outline-success" type="button">
                             <i class="bi bi-collection me-1"></i>Claim Multiple
                         </button>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-auto">
+                        <small id="claim-count-helper" class="form-text text-muted">You may claim any number from 1 up
+                            to your maximum allowed.</small>
                     </div>
                 </div>
                 <div class="d-flex justify-content-center">

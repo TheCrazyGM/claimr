@@ -120,13 +120,13 @@ document.addEventListener("DOMContentLoaded", function () {
         // Store the RC before claiming to calculate the difference later
         let rcBefore = lastRcCheck;
         let estimatedCost = 0;
-        
+
         // Get the most recent estimated cost before claiming
         fetch('/api/rc_cost_data')
             .then(r => r.json())
             .then(rcData => {
                 estimatedCost = rcData.most_recent_cost || 0;
-                
+
                 // Proceed with the claim operation
                 window.hive_keychain.requestBroadcast(
                     username,
@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         claimInProgress = false;
                         if (response.success) {
                             showStatus('Claim broadcast sent! Checking RC usage...', 'success');
-                            
+
                             // Wait a moment for the blockchain to process the transaction
                             setTimeout(() => {
                                 // Check RC after the claim
@@ -148,13 +148,13 @@ document.addEventListener("DOMContentLoaded", function () {
                                             const rcUsed = rcBefore - rcAfter;
                                             // Use more precise calculation for large numbers
                                             const percentDiff = estimatedCost > 0 ? parseFloat(((rcUsed / estimatedCost) * 100).toFixed(2)) : 0;
-                                            
+
                                             // Update the last RC check value
                                             lastRcCheck = rcAfter;
-                                            
+
                                             // Update UI with RC usage information
                                             showStatus(`Claim successful! Check the RC usage details below.`, 'success');
-                                            
+
                                             // Display detailed RC usage comparison in the dedicated section
                                             const rcComparisonEl = document.getElementById('rc-usage-comparison');
                                             rcComparisonEl.innerHTML = `
@@ -184,7 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                                 </div>
                                               </div>
                                             `;
-                                            
+
                                             // Update the RC bar
                                             const maxRc = data.rc.max_mana;
                                             const percent = Math.round(100 * rcAfter / maxRc);
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                               </div>
                                               <div class='text-center small text-muted mt-1'>${rcAfter.toLocaleString()} / ${maxRc.toLocaleString()} RC</div>
                                             `;
-                                            
+
                                             // Update claim buttons based on new RC value
                                             if (estimatedCost > 0) {
                                                 rcSufficient = rcAfter >= estimatedCost;
@@ -248,39 +248,60 @@ document.addEventListener("DOMContentLoaded", function () {
                     lastRcCheck = data.rc.current_mana;
                     const maxRc = data.rc.max_mana;
                     const percent = Math.round(100 * lastRcCheck / maxRc);
-                    fetch('/api/rc_cost_data').then(r => r.json()).then(rcData => {
-                        const mostRecentCost = rcData.most_recent_cost || 0;
-                        // Calculate max claims
-                        let maxClaims = 0;
-                        if (mostRecentCost > 0) {
-                            maxClaims = Math.floor(lastRcCheck / mostRecentCost);
-                        }
-                        // Update number input to max claims if possible
-                        if (maxClaims > 0) {
-                            countInput.value = maxClaims;
-                            rcSufficient = true;
-                        } else {
-                            countInput.value = 1;
-                            rcSufficient = false;
-                        }
-                        updateClaimButtons();
-                        // Render progress bar
-                        document.getElementById('rc-bar').innerHTML = `
-                          <div class='progress' title='${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()}'>
-                            <div class='progress-bar bg-info' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'>${percent}%</div>
-                          </div>
-                          <div class='text-center small text-muted mt-1'>${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()} RC</div>
-                        `;
-                        let claimsMsg = '';
-                        if (typeof data.claims === 'number') {
-                            claimsMsg = `<br><span class='rc-teal'>You already have <b>${data.claims}</b> claimed account${data.claims === 1 ? '' : 's'} ready to use.</span>`;
-                        }
-                        if (maxClaims > 0) {
-                            showStatus('You have enough RC (' + lastRcCheck.toLocaleString() + ') to claim ' + maxClaims + ' account(s)!' + claimsMsg, 'success');
-                        } else {
-                            showStatus('Not enough RC. You have ' + lastRcCheck.toLocaleString() + ', need ' + (mostRecentCost || 0).toLocaleString() + ' to claim 1 account.' + claimsMsg, 'danger');
-                        }
-                    });
+
+                    // Fetch RC cost data to calculate max claims
+                    fetch('/api/rc_cost_data')
+                        .then(r => r.json())
+                        .then(rcData => {
+                            const mostRecentCost = rcData.most_recent_cost || 0;
+                            let maxClaims = 0;
+
+                            if (mostRecentCost > 0) {
+                                maxClaims = Math.floor(lastRcCheck / mostRecentCost);
+                            }
+
+                            // Set max attribute and handle user input
+                            countInput.max = maxClaims > 0 ? maxClaims : 1;
+
+                            if (maxClaims > 0) {
+                                rcSufficient = true;
+                                // Only set value if user's input exceeds new max
+                                if (parseInt(countInput.value) > maxClaims) {
+                                    countInput.value = maxClaims;
+                                }
+                                countInput.title = `You can claim up to ${maxClaims} account(s) with your RC.`;
+                            } else {
+                                if (parseInt(countInput.value) < 1) countInput.value = 1;
+                                rcSufficient = false;
+                                countInput.title = 'Not enough RC to claim more than 1 account.';
+                            }
+                            updateClaimButtons();
+
+                            // Render progress bar
+                            document.getElementById('rc-bar').innerHTML = `
+                                <div class='progress' title='${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()}'>
+                                    <div class='progress-bar bg-info' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'>${percent}%</div>
+                                </div>
+                                <div class='text-center small text-muted mt-1'>${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()} RC</div>
+                            `;
+
+                            // Handle claims message
+                            let claimsMsg = '';
+                            if (typeof data.claims === 'number') {
+                                claimsMsg = `<br><span class='rc-teal'>You already have <b>${data.claims}</b> claimed account${data.claims === 1 ? '' : 's'} ready to use.</span>`;
+                            }
+
+                            // Show appropriate status message
+                            if (maxClaims > 0) {
+                                showStatus('You have enough RC (' + lastRcCheck.toLocaleString() + ') to claim ' + maxClaims + ' account(s)!' + claimsMsg, 'success');
+                            } else {
+                                showStatus('Not enough RC. You have ' + lastRcCheck.toLocaleString() + ', need ' + (mostRecentCost || 0).toLocaleString() + ' to claim 1 account.' + claimsMsg, 'danger');
+                            }
+                        })
+                        .catch(err => {
+                            showStatus('Error fetching RC cost data: ' + err, 'danger');
+                            document.getElementById('rc-bar').innerHTML = '';
+                        });
                 } else {
                     showStatus('Could not check RC: ' + (data.message || 'Unknown error'), 'danger');
                     document.getElementById('rc-bar').innerHTML = '';
