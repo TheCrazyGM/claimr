@@ -1,8 +1,8 @@
 import os
+from datetime import datetime, timedelta
 
 import dataset
-from datetime import datetime, timedelta
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, render_template, request
 
 main_bp = Blueprint("main", __name__)
 
@@ -39,6 +39,19 @@ def get_cost_data():
 @main_bp.route("/")
 def index():
     return render_template("index.html")
+
+
+@main_bp.route("/claim-account")
+def claim_account():
+    """Render the account claim page"""
+    return render_template("claim_account.html")
+
+
+@main_bp.route("/claim-account/success")
+def claim_success():
+    tx = request.args.get("tx")
+    acc = request.args.get("acc")
+    return render_template("claim_success.html", tx=tx, acc=acc)
 
 
 @main_bp.route("/api/rc_cost_data")

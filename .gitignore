@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+# Python-generated files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -177,3 +177,8 @@ cython_debug/
 rc_costs.db
 rc_costs.db-shm
 rc_costs.db-wal
+
+# Node
+node_modules
+package-lock.json
+package.json
