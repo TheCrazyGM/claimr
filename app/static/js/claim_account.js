@@ -128,6 +128,7 @@
     const roles = ["owner", "active", "posting", "memo"];
     const out = {};
     out.account = accountName;
+    out.password = password;
     roles.forEach((role) => {
       const priv = dhive.PrivateKey.fromLogin(accountName, password, role);
       out[role] = {
@@ -141,7 +142,7 @@
   // Generate a strong BIP39 mnemonic password
   function generatePassword() {
     try {
-      const mnemonic = BIP39.generateMnemonic(256); // 24-word mnemonic
+      const mnemonic = BIP39.generateMnemonic(128); // 12-word mnemonic
       passwordInput.value = mnemonic;
     } catch (e) {
       // fallback if BIP39 not available
