@@ -190,32 +190,51 @@
     const creator = claimerInput.value.trim();
     const newAcc = newUserInput.value.trim();
     const password = passwordInput.value;
-    if (!creator || !newAcc || !password) return;
-    const keys = generateKeysFromPassword(newAcc, password);
+    if (!creator || !newAcc || !password) {
+      showToast("Missing required fields", "danger");
+      return;
+    }
+    if (!generatedKeys) {
+      showToast("Generate and download keys first", "danger");
+      return;
+    }
+    console.log("Attempting to create claimed account with:", {
+      creator,
+      newAcc,
+      owner: generatedKeys.owner.public,
+      active: generatedKeys.active.public,
+      posting: generatedKeys.posting.public,
+      memo: generatedKeys.memo.public,
+    });
+
+    // Create the operation manually as Keychain's helper might have issues
     const op = [
       "create_claimed_account",
       {
-        creator,
+        creator: creator,
         new_account_name: newAcc,
         owner: {
           weight_threshold: 1,
           account_auths: [],
-          key_auths: [[keys.owner.public, 1]],
+          key_auths: [[generatedKeys.owner.public, 1]],
         },
         active: {
           weight_threshold: 1,
           account_auths: [],
-          key_auths: [[keys.active.public, 1]],
+          key_auths: [[generatedKeys.active.public, 1]],
         },
         posting: {
           weight_threshold: 1,
           account_auths: [],
-          key_auths: [[keys.posting.public, 1]],
+          key_auths: [[generatedKeys.posting.public, 1]],
         },
-        memo_key: keys.memo.public,
+        memo_key: generatedKeys.memo.public,
         json_metadata: "",
+        extensions: [],
       },
     ];
+
+    // Use the broadcast operation method instead
     hive_keychain.requestBroadcast(creator, [op], "Active", (resp) => {
       if (resp.success) {
         const link =
