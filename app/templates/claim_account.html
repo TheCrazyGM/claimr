@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h1 class="mt-4">
-    <i class="bi bi-person-plus me-2"></i>Create New Hive Account
-  </h1>
+  <div class="d-flex justify-content-between align-items-center mt-4">
+    <h1>
+      <i class="bi bi-person-plus me-2"></i>Create New Hive Account
+    </h1>
+    <button id="top-reset-btn" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-counterclockwise"></i> Start Over
+    </button>
+  </div>
   <hr />
   <div class="row g-3 mt-3">
     <div class="col-md-6">

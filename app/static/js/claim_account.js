@@ -288,16 +288,21 @@
   regenPassBtn.addEventListener("click", generatePassword);
   passwordInput.addEventListener("input", updateKeys);
   downloadKeysBtn.addEventListener("click", downloadKeys);
+  
+  // Reset buttons
   const resetBtn = document.getElementById("reset-flow-btn");
   resetBtn.addEventListener("click", resetFlow);
+  const topResetBtn = document.getElementById("top-reset-btn");
+  topResetBtn.addEventListener("click", resetFlow);
+  
   createBtn.addEventListener("click", handleCreateAccount);
 
   function resetFlow() {
     // enable initial inputs
     claimerInput.disabled = false;
     checkClaimerBtn.disabled = false;
-    newUserInput.disabled = true;
-    checkNewuserBtn.disabled = true;
+    newUserInput.disabled = false;
+    checkNewuserBtn.disabled = false;
 
     // clear values and status
     claimerInput.value = "";
@@ -314,6 +319,10 @@
     passwordInput.value = "";
     keysDisplay.textContent = "";
     generatedKeys = null;
+    
+    // reset validation flags
+    claimerValid = false;
+    newUsernameValid = false;
 
     // buttons
     downloadKeysBtn.disabled = false;
