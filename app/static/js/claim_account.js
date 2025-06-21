@@ -106,7 +106,10 @@
       );
       // Mark claimer as valid
       claimerValid = true;
-      // Always enable new-account inputs
+      // Lock this input after successful validation
+      claimerInput.disabled = true;
+      checkClaimerBtn.disabled = true;
+      // Always enable new-account inputs if not already validated
       newUserInput.disabled = false;
       checkNewuserBtn.disabled = false;
       // Check if we can proceed
@@ -140,6 +143,9 @@
       showStatus(newuserStatus, `@${name} is available!`, "success");
       // Mark username as valid
       newUsernameValid = true;
+      // Lock this input after successful validation
+      newUserInput.disabled = true;
+      checkNewuserBtn.disabled = true;
       // Check if we can proceed
       checkBothValidations();
     } catch (err) {
