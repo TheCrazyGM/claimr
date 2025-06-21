@@ -57,11 +57,31 @@
     el.innerHTML = `<div class="alert alert-${type} py-2 mb-0"><i class="bi ${icon} me-1"></i>${msg}</div>`;
   }
 
+  // Track validation status
+  let claimerValid = false;
+  let newUsernameValid = false;
+  
+  // Check if both validations are complete and proceed if so
+  function checkBothValidations() {
+    if (claimerValid && newUsernameValid) {
+      // Both checks passed, lock inputs to prevent changes before submission
+      claimerInput.disabled = true;
+      checkClaimerBtn.disabled = true;
+      newUserInput.disabled = true;
+      checkNewuserBtn.disabled = true;
+      
+      // Proceed to password section
+      passwordSection.style.display = "";
+      generatePassword();
+    }
+  }
+
   // Check RC + claims for existing user
   async function handleCheckClaimer() {
     const username = claimerInput.value.trim().toLowerCase();
     if (!username) {
       showStatus(claimerStatus, "Enter your username", "warning");
+      claimerValid = false;
       return;
     }
     showStatus(claimerStatus, "Checking RC and pending claims…");
@@ -76,6 +96,7 @@
           `You have no pending claimed accounts.`,
           "danger",
         );
+        claimerValid = false;
         return;
       }
       showStatus(
@@ -83,11 +104,16 @@
         `You have ${claims} pending claimed accounts!`,
         "success",
       );
-      // enable new-account inputs
+      // Mark claimer as valid
+      claimerValid = true;
+      // Always enable new-account inputs
       newUserInput.disabled = false;
       checkNewuserBtn.disabled = false;
+      // Check if we can proceed
+      checkBothValidations();
     } catch (err) {
       showStatus(claimerStatus, err.message || err, "danger");
+      claimerValid = false;
     }
   }
 
@@ -96,6 +122,7 @@
     const name = newUserInput.value.trim().toLowerCase();
     if (!name) {
       showStatus(newuserStatus, "Enter desired account name", "warning");
+      newUsernameValid = false;
       return;
     }
     showStatus(newuserStatus, "Checking availability…");
@@ -107,19 +134,17 @@
           `@${name} already exists. Choose another.`,
           "danger",
         );
+        newUsernameValid = false;
         return;
       }
       showStatus(newuserStatus, `@${name} is available!`, "success");
-      // lock inputs to prevent changes before submission
-      claimerInput.disabled = true;
-      checkClaimerBtn.disabled = true;
-      newUserInput.disabled = true;
-      checkNewuserBtn.disabled = true;
-      // proceed to password section
-      passwordSection.style.display = "";
-      generatePassword();
+      // Mark username as valid
+      newUsernameValid = true;
+      // Check if we can proceed
+      checkBothValidations();
     } catch (err) {
       showStatus(newuserStatus, err.message || err, "danger");
+      newUsernameValid = false;
     }
   }
 
