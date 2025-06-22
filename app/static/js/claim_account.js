@@ -206,7 +206,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `hive_keys_${newUserInput.value.trim()}.json`;
+    a.download = `hive_${newUserInput.value.trim()}_keys.json`;
     a.click();
     URL.revokeObjectURL(url);
     // Enable create button after user has downloaded keys
