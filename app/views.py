@@ -57,13 +57,23 @@ def claim_success():
 @main_bp.route("/api/rc_cost_data")
 def rc_cost_data():
     data = get_cost_data()
-    # Only keep entries from the last 24 hours
-    cutoff = datetime.now() - timedelta(hours=24)
+
+    # Determine cutoff based on query params
+    hours_param = request.args.get("hours")
+    cutoff = None
+    if hours_param:
+        try:
+            hours = int(hours_param)
+            if hours > 0:
+                cutoff = datetime.now() - timedelta(hours=hours)
+        except ValueError:
+            pass  # invalid param, ignore and return all
+
     filtered = []
     for row in data:
         try:
             ts = datetime.fromisoformat(row["timestamp"])
-            if ts >= cutoff:
+            if not cutoff or ts >= cutoff:
                 filtered.append(row)
         except Exception:
             continue  # skip malformed timestamps

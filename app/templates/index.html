@@ -18,6 +18,13 @@
   <div class="card shadow-sm rounded">
     <div class="card-body">
       <h3 class="card-title mb-4">RC Cost Over Time</h3>
+      <div class="d-flex justify-content-end mb-2">
+        <div class="btn-group btn-group-sm" id="rangeSelector" role="group" aria-label="Select time range">
+          <button type="button" class="btn btn-outline-secondary active" data-range="daily">Daily</button>
+          <button type="button" class="btn btn-outline-secondary" data-range="weekly">Weekly</button>
+          <button type="button" class="btn btn-outline-secondary" data-range="monthly">Monthly</button>
+        </div>
+      </div>
       <canvas id="costChart" height="100"></canvas>
     </div>
   </div>

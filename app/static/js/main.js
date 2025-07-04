@@ -15,6 +15,40 @@ document.addEventListener("DOMContentLoaded", function () {
     claimMultiBtn.disabled = !rcSufficient;
   }
 
+  // --- RC Cost Chart with Range Selector ---
+  // Global variables for range selector
+  let rawRcData = null;    // full-resolution data from backend
+  let currentRange = "daily"; // default
+
+  // Aggregate labels/costs into daily/weekly/monthly buckets using Luxon
+  function aggregateData(labels, costs, range) {
+    if (range === "daily") {
+      return { labels, costs };
+    }
+    const DateTime = luxon.DateTime;
+    const buckets = {};
+    labels.forEach((iso, idx) => {
+      const dt = DateTime.fromISO(iso, { zone: "utc" });
+      const key = range === "weekly"
+        ? dt.startOf("week").toISODate()
+        : dt.startOf("month").toISODate();
+      if (!buckets[key]) buckets[key] = { sum: 0, count: 0 };
+      const val = Number(costs[idx]);
+      if (!isNaN(val)) {
+        buckets[key].sum += val;
+        buckets[key].count += 1;
+      }
+
+    });
+    const sortedKeys = Object.keys(buckets).sort();
+    const aggLabels = sortedKeys;
+    const aggCosts = sortedKeys.map((k) => {
+      const bucket = buckets[k];
+      return bucket.count > 0 ? bucket.sum / bucket.count : 0;
+    });
+    return { labels: aggLabels, costs: aggCosts };
+  }
+
   // Chart.js rendering
   function renderChart(labels, costs) {
     if (window.costChartInstance) {
@@ -59,12 +93,58 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Update chart according to currentRange and raw data
+  function updateRcChart() {
+    if (!rawRcData) return;
+    let labelsArr = rawRcData.labels;
+    let costsArr = rawRcData.costs;
+    if (currentRange === "daily") {
+      const nowMs = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      const filtered = labelsArr.reduce(
+        (acc, iso, idx) => {
+          const t = Date.parse(iso);
+          if (!isNaN(t) && nowMs - t <= dayMs) {
+            acc.labels.push(iso);
+            acc.costs.push(costsArr[idx]);
+          }
+          return acc;
+        },
+        { labels: [], costs: [] },
+      );
+      labelsArr = filtered.labels;
+      costsArr = filtered.costs;
+    }
+    const { labels, costs } = aggregateData(labelsArr, costsArr, currentRange);
+    renderChart(labels, costs);
+  }
+
+  // Attach range selector event listener
+  const rangeSelectorEl = document.getElementById("rangeSelector");
+  if (rangeSelectorEl) {
+    rangeSelectorEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-range]");
+      if (!btn) return;
+      const selected = btn.dataset.range;
+      if (!selected || selected === currentRange) return;
+      currentRange = selected;
+      // Toggle active styling
+      rangeSelectorEl.querySelectorAll("button").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+      });
+      updateRcChart();
+    });
+  }
+
   // Fetch RC cost data and render chart
   function fetchRcCostData() {
-    fetch("/api/rc_cost_data")
+    fetch("/api/rc_cost_data?hours=720")
       .then((response) => response.json())
       .then((data) => {
-        renderChart(data.labels, data.costs);
+        // Ensure costs are numbers
+        data.costs = Array.isArray(data.costs) ? data.costs.map((c) => Number(c)) : [];
+        rawRcData = data; // store for later aggregation
+        updateRcChart();
         // Update the most recent cost/time display
         const costEl = document.getElementById("most-recent-cost");
         const timeEl = document.getElementById("most-recent-time");
@@ -131,7 +211,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let totalClaimCount = claimCount;
 
     // Get the most recent estimated cost before claiming
-    fetch("/api/rc_cost_data")
+    fetch("/api/rc_cost_data?hours=720")
       .then((r) => r.json())
       .then((rcData) => {
         estimatedCost = rcData.most_recent_cost || 0;
@@ -300,7 +380,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const percent = Math.round((100 * lastRcCheck) / maxRc);
 
           // Fetch RC cost data to calculate max claims
-          fetch("/api/rc_cost_data")
+          fetch("/api/rc_cost_data?hours=720")
             .then((r) => r.json())
             .then((rcData) => {
               const mostRecentCost = rcData.most_recent_cost || 0;
