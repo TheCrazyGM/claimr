@@ -324,7 +324,39 @@ document.addEventListener("DOMContentLoaded", function () {
     handleClaim(false);
   });
 
-  // Initial chart load
-  // RC chart logic migrated to rc_chart.js; legacy call disabled
-// fetchRcCostData();
+  // Update the most recent estimated RC claim cost display
+  function updateRecentCostDisplay() {
+    fetch("/api/rc_cost_data?hours=720")
+      .then((response) => response.json())
+      .then((data) => {
+        // Update the most recent cost/time display
+        const costEl = document.getElementById("most-recent-cost");
+        const timeEl = document.getElementById("most-recent-time");
+        if (
+          data.most_recent_cost !== undefined &&
+          data.most_recent_cost !== null
+        ) {
+          costEl.textContent = Number(data.most_recent_cost).toLocaleString();
+        } else {
+          costEl.textContent = "No data available";
+        }
+        if (data.most_recent_time) {
+          // Format ISO string to readable local time
+          const d = new Date(data.most_recent_time);
+          if (!isNaN(d)) {
+            timeEl.textContent = "as of " + d.toLocaleString();
+          } else {
+            timeEl.textContent = "as of " + data.most_recent_time;
+          }
+        } else {
+          timeEl.textContent = "";
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching recent RC cost data:", err);
+      });
+  }
+  
+  // Initial load of recent cost display
+  updateRecentCostDisplay();
 });
