@@ -1,8 +1,9 @@
 /* Theme Colors */
 :root {
-  --rc-teal: #218c8d;
+  --rc-primary: #483D8B;
+  --rc-secondary: #00BFFF;
   --rc-success: #198754;
-  --rc-light: #f9fafb;
+  --rc-light: #ffffff;
   --rc-border-radius: 0.5rem;
 }
 
@@ -16,8 +17,8 @@ body {
 .btn-info,
 .bg-info,
 .progress-bar.bg-info {
-  background-color: var(--rc-teal) !important;
-  border-color: var(--rc-teal) !important;
+  background-color: var(--rc-primary) !important;
+  border-color: var(--rc-primary) !important;
 }
 
 .btn-info {
@@ -29,8 +30,8 @@ body {
 }
 
 .text-info,
-.rc-teal {
-  color: var(--rc-teal) !important;
+.rc-primary {
+  color: var(--rc-primary) !important;
 }
 
 .card.border-info,
@@ -39,7 +40,7 @@ body {
 }
 
 .card.border-info {
-  border-color: var(--rc-teal) !important;
+  border-color: var(--rc-primary) !important;
 }
 
 .card.border-success {
@@ -48,12 +49,12 @@ body {
 
 /* Custom for RC Cost Card */
 .rc-cost-card {
-  border: 2px solid var(--rc-teal) !important;
+  border: 2px solid var(--rc-primary) !important;
   border-radius: var(--rc-border-radius);
 }
 
-.display-6.fw-bold.rc-teal {
-  color: var(--rc-teal) !important;
+.display-6.fw-bold.rc-primary {
+  color: var(--rc-primary) !important;
 }
 
 /* Misc */
