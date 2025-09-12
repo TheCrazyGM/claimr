@@ -6,7 +6,7 @@ A modern Flask web application for tracking and visualizing Hive blockchain Reso
 
 ## Features
 
-- **Live RC Claim Cost Chart:** Visualize RC claim costs over time with Chart.js.
+- **Live RC Claim Cost Chart:** Visualize RC claim costs over time with ApexCharts.
 - **Most Recent RC Cost:** Prominently display the latest claim cost and timestamp.
 - **Claim Account(s):** Check your RC, see how many accounts you can claim, and broadcast claim operations via Hive Keychain.
 - **Responsive UI:** Modern, mobile-friendly interface using Bootstrap 5.
@@ -66,14 +66,26 @@ claimr/
 │   ├── views.py
 │   ├── templates/
 │   │   ├── base.html
-│   │   └── index.html
+│   │   ├── index.html
+│   │   ├── claim_account.html
+│   │   └── claim_success.html
 │   └── static/
-│       └── css/style.css
+│       ├── css/
+│       │   └── style.css
+│       ├── js/
+│       │   ├── main.js
+│       │   └── rc_chart.js
+│       └── img/
 ├── log_rc_cost.py
 ├── run.py
-├── requirements.txt
+├── wsgi.py
+├── crontab.txt
+├── run_log_rc_cost_cron.sh
+├── pyproject.toml
 ├── .env.example
 ├── .gitignore
+├── .prettierrc
+├── LICENSE
 └── README.md
 ```
 
@@ -85,7 +97,7 @@ claimr/
 
 - Flask
 - Bootstrap 5 & Bootstrap Icons
-- Chart.js
+- ApexCharts
 - dataset
 - nectar (Hive blockchain library)
 - python-dotenv
