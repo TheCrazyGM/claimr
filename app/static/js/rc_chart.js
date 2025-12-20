@@ -1,53 +1,62 @@
 // rc_chart.js
-// Handles RC Cost Over Time chart with daily / weekly / monthly rolling averages
-// Displays average line and min-max "cloud" using ApexCharts
+// Handles RC Cost Over Time chart with sleek Chart.js visualization
 
 (function () {
     // DOM elements
     const rangeSelectorEl = document.getElementById("rangeSelector");
-    const chartContainer = document.querySelector("#costChart");
-    if (!rangeSelectorEl || !chartContainer) return; // nothing to do on pages without chart
+    const chartCanvas = document.querySelector("#costChart");
+    if (!rangeSelectorEl || !chartCanvas) return;
+
+    // Create a canvas element inside the container if it's a div
+    let canvas;
+    if (chartCanvas.tagName === 'DIV') {
+        canvas = document.createElement('canvas');
+        chartCanvas.innerHTML = '';
+        chartCanvas.appendChild(canvas);
+        // Important for Chart.js responsiveness
+        chartCanvas.style.position = 'relative';
+        chartCanvas.style.height = '350px';
+    } else {
+        canvas = chartCanvas;
+    }
 
     // Chart state
     let currentRange = "daily"; // default view
     let rawLabels = [];
     let rawCosts = [];
-    let chart = null;
-    const msPerDay = 86400000; // 24h in milliseconds
+    let chartInstance = null;
+    const msPerDay = 86400000;
 
     /**
-     * Group data points by day, calculating min/max/avg for each day
+     * Group data points by day
      */
     function bucketByDay(labels, costs) {
-        const tzOffsetMs = new Date().getTimezoneOffset() * 60000; // local timezone offset
         const buckets = new Map();
-        
-        // Group by day
+
         labels.forEach((iso, idx) => {
             const timestamp = Date.parse(iso);
             const value = Number(costs[idx]);
-            
-            // Skip invalid data points
+
             if (isNaN(timestamp) || isNaN(value)) return;
-            
-            // Create day bucket key (midnight of the day in local timezone)
-            const dayKey = Math.floor((timestamp - tzOffsetMs) / msPerDay) * msPerDay + tzOffsetMs;
-            
-            // Initialize bucket or update existing one
+
+            // Local midnight key
+            const date = new Date(timestamp);
+            date.setHours(0, 0, 0, 0);
+            const dayKey = date.getTime();
+
             if (!buckets.has(dayKey)) {
                 buckets.set(dayKey, { sum: 0, count: 0, min: value, max: value });
             }
-            
+
             const bucket = buckets.get(dayKey);
             bucket.sum += value;
             bucket.count += 1;
             bucket.min = Math.min(bucket.min, value);
             bucket.max = Math.max(bucket.max, value);
         });
-        
-        // Convert to sorted array with calculated averages
+
         return Array.from(buckets.entries())
-            .sort((a, b) => a[0] - b[0]) // sort by timestamp
+            .sort((a, b) => a[0] - b[0])
             .map(([ts, b]) => ({
                 ts,
                 avg: b.sum / b.count,
@@ -57,422 +66,278 @@
     }
 
     /**
-     * Group data by hour intervals
+     * Prepare data for Chart.js
      */
-    function bucketByHours(labels, costs, hours) {
-        const ms = hours * 3600000; // hours to milliseconds
-        const buckets = new Map();
-        
-        // Group by hour interval
-        labels.forEach((iso, idx) => {
-            const timestamp = Date.parse(iso);
-            const value = Number(costs[idx]);
-            
-            // Skip invalid data points
-            if (isNaN(timestamp) || isNaN(value)) return;
-            
-            // Create hour bucket key
-            const key = Math.floor(timestamp / ms) * ms;
-            
-            // Initialize bucket or update existing one
-            if (!buckets.has(key)) {
-                buckets.set(key, { sum: 0, count: 0, min: value, max: value });
-            }
-            
-            const bucket = buckets.get(key);
-            bucket.sum += value;
-            bucket.count += 1;
-            bucket.min = Math.min(bucket.min, value);
-            bucket.max = Math.max(bucket.max, value);
-        });
-        
-        // Convert to sorted array with calculated averages
-        return Array.from(buckets.entries())
-            .sort((a, b) => a[0] - b[0]) // sort by timestamp
-            .map(([ts, b]) => ({
-                ts,
-                avg: b.sum / b.count,
-                min: b.min,
-                max: b.max
-            }));
-    }
-
-    /**
-     * Calculate rolling averages over a window of days
-     */
-    function calculateRollingAverage(data, windowDays) {
-        if (windowDays <= 1) return data;
-        
-        const result = [];
-        for (let i = 0; i < data.length; i++) {
-            // Get window of data points
-            const window = data.slice(Math.max(0, i - windowDays + 1), i + 1);
-            
-            // Calculate rolling average, min and max
-            const avg = window.reduce((sum, point) => sum + point.avg, 0) / window.length;
-            const min = Math.min(...window.map(point => point.min));
-            const max = Math.max(...window.map(point => point.max));
-            
-            result.push({
-                ts: data[i].ts,
-                avg,
-                min,
-                max
-            });
-        }
-        
-        return result;
-    }
-
-    /**
-     * Prepare data series based on the selected time range
-     */
-    function prepareSeries() {
+    function prepareData() {
         const now = Date.now();
-        let dataSeries, scale;
-        
-        // 1. DAILY VIEW: Show raw data points from the last 24 hours
+        let scale = 1;
+        let unit = "";
+
+        let processedData = [];
+        let showBand = false;
+
+        // Process data based on range
         if (currentRange === "daily") {
             const cutoff = now - msPerDay;
-            
-            // Filter points from the last 24 hours
             const points = [];
+
             rawLabels.forEach((iso, idx) => {
                 const timestamp = Date.parse(iso);
                 const value = Number(rawCosts[idx]);
-                
                 if (!isNaN(timestamp) && !isNaN(value) && timestamp >= cutoff) {
-                    points.push({ ts: timestamp, value });
+                    points.push({ x: timestamp, y: value });
                 }
             });
-            
-            // Sort by timestamp
-            points.sort((a, b) => a.ts - b.ts);
-            
-            if (points.length === 0) {
-                return { mainSeries: [], minMaxSeries: [], scale: 1, showBand: false };
-            }
-            
-            // Calculate scale based on data magnitude
-            const maxValue = Math.max(...points.map(p => p.value));
-            if (maxValue > 1e12) {
-                scale = 1e9; // Scale to billions for trillion+ values
-            } else if (maxValue > 1e9) {
-                scale = 1e6; // Scale to millions for billion+ values
-            } else {
-                scale = 1; // No scaling for smaller values
-            }
-            
-            // Create main series (only data points, no band for daily view)
-            const mainSeries = points.map(p => ({
-                x: p.ts,
-                y: p.value / scale
-            }));
-            
-            return {
-                mainSeries,
-                minMaxSeries: [], // No band for daily view
-                scale,
-                showBand: false    // Don't show band for daily view
-            };
-        }
-        
-        // 2. WEEKLY VIEW: Show daily data with min/max band for the last 7 days
-        else if (currentRange === "weekly") {
-            const cutoff = now - (7 * msPerDay);
-            
-            // Get daily buckets for the last 7 days
+            points.sort((a, b) => a.x - b.x);
+
+            processedData = { main: points, min: [], max: [] };
+            showBand = false;
+        } else {
+            // Weekly or Monthly
+            const days = currentRange === "weekly" ? 7 : 30;
+            const cutoff = now - (days * msPerDay);
+
             const buckets = bucketByDay(rawLabels, rawCosts)
-                .filter(bucket => bucket.ts >= cutoff && isFinite(bucket.avg))
-                .sort((a, b) => a.ts - b.ts);
-            
-            if (buckets.length === 0) {
-                return { mainSeries: [], minMaxSeries: [], scale: 1, showBand: true };
-            }
-            
-            // Calculate scale
-            const maxValue = Math.max(...buckets.map(b => b.max));
-            if (maxValue > 1e12) {
-                scale = 1e9; // Scale to billions for trillion+ values
-            } else if (maxValue > 1e9) {
-                scale = 1e6; // Scale to millions for billion+ values
-            } else {
-                scale = 1; // No scaling for smaller values
-            }
-            
-            // Create series
-            const mainSeries = buckets.map(b => ({
-                x: b.ts,
-                y: b.avg / scale
-            }));
-            
-            const minMaxSeries = buckets.map(b => ({
-                x: b.ts,
-                y: [b.min / scale, b.max / scale] // [min, max] for the range area
-            }));
-            
-            return {
-                mainSeries,
-                minMaxSeries,
-                scale,
-                showBand: true
+                .filter(b => b.ts >= cutoff);
+
+            processedData = {
+                main: buckets.map(b => ({ x: b.ts, y: b.avg })),
+                min: buckets.map(b => ({ x: b.ts, y: b.min })),
+                max: buckets.map(b => ({ x: b.ts, y: b.max }))
             };
+            showBand = true;
         }
-        
-        // 3. MONTHLY VIEW: Show daily data with min/max band for the last 30 days
-        else {
-            const cutoff = now - (30 * msPerDay);
-            
-            // Get daily buckets for the last 30 days
-            const buckets = bucketByDay(rawLabels, rawCosts)
-                .filter(bucket => bucket.ts >= cutoff && isFinite(bucket.avg))
-                .sort((a, b) => a.ts - b.ts);
-            
-            if (buckets.length === 0) {
-                return { mainSeries: [], minMaxSeries: [], scale: 1, showBand: true };
-            }
-            
-            // Calculate scale
-            const maxValue = Math.max(...buckets.map(b => b.max));
-            if (maxValue > 1e12) {
-                scale = 1e9; // Scale to billions for trillion+ values
-            } else if (maxValue > 1e9) {
-                scale = 1e6; // Scale to millions for billion+ values
-            } else {
-                scale = 1; // No scaling for smaller values
-            }
-            
-            // Create series
-            const mainSeries = buckets.map(b => ({
-                x: b.ts,
-                y: b.avg / scale
-            }));
-            
-            const minMaxSeries = buckets.map(b => ({
-                x: b.ts,
-                y: [b.min / scale, b.max / scale] // [min, max] for the range area
-            }));
-            
-            return {
-                mainSeries,
-                minMaxSeries,
-                scale,
-                showBand: true
-            };
+
+        if (processedData.main.length === 0) return null;
+
+        // Auto-scaling
+        const allValues = [
+            ...processedData.main.map(p => p.y),
+            ...processedData.max.map(p => p.y)
+        ];
+        const maxValue = Math.max(...allValues);
+
+        if (maxValue > 1e12) {
+            scale = 1e9;
+            unit = " (Billions)";
+        } else if (maxValue > 1e9) {
+            scale = 1e6;
+            unit = " (Millions)";
         }
+
+        // Apply scale
+        const scaleFn = p => ({ x: p.x, y: p.y / scale });
+        return {
+            main: processedData.main.map(scaleFn),
+            min: processedData.min.map(scaleFn),
+            max: processedData.max.map(scaleFn),
+            scale,
+            unit,
+            showBand
+        };
     }
 
     /**
-     * Draw the chart with the current data and settings
+     * Create gradient
+     */
+    function createGradient(ctx, colorStart, colorEnd) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, colorStart);
+        gradient.addColorStop(1, colorEnd);
+        return gradient;
+    }
+
+    /**
+     * Draw/Update Chart
      */
     function drawChart() {
-        const { mainSeries, minMaxSeries, scale, showBand } = prepareSeries();
-        
-        // Show message if no data
-        if (mainSeries.length === 0) {
-            chartContainer.innerHTML = "<p class='text-muted'>No RC cost data available.</p>";
+        const data = prepareData();
+        if (!data) {
+            chartCanvas.innerHTML = "<div class='text-center text-muted p-5'>No data available</div>";
             return;
         }
-        
-        // Configure chart options
-        const series = [
-            {
-                name: "Value",
-                type: "line",
-                data: mainSeries,
-                color: "#0d6efd" // Blue line
-            }
-        ];
-        
-        // Add the min/max band series if needed (weekly and monthly views)
-        if (showBand) {
-            series.push({
-                name: "Range",
-                type: "rangeArea",
-                data: minMaxSeries,
-                color: "#cfe2ff" // Light blue band
+
+        const ctx = canvas.getContext('2d');
+
+        // Destroy existing chart
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        const datasets = [];
+
+        // 1. Min/Max Band (Background)
+        if (data.showBand) {
+            datasets.push({
+                label: 'Max',
+                data: data.max,
+                borderColor: 'transparent',
+                backgroundColor: 'rgba(99, 102, 241, 0.15)', // Indigo fill (matching main line)
+                pointRadius: 0,
+                fill: 1, // fill to dataset index 1 (Min)
+                tension: 0.4
+            });
+            datasets.push({
+                label: 'Min',
+                data: data.min,
+                borderColor: 'transparent',
+                backgroundColor: 'transparent', // No fill for this boundary
+                pointRadius: 0,
+                fill: false,
+                tension: 0.4
             });
         }
-        
-        // Chart configuration
-        const options = {
-            chart: {
-                type: "line",
-                height: 350,
-                zoom: { enabled: true },
-                toolbar: { show: true },
-                animations: { enabled: false } // Disable animations for better performance
+
+        // 2. Main Average/Value Line (Foreground)
+        datasets.push({
+            label: 'RC Cost',
+            data: data.main,
+            borderColor: '#6366f1', // Indigo-500 equivalent, sleek purple/blue
+            backgroundColor: (context) => {
+                const chart = context.chart;
+                const { ctx, chartArea } = chart;
+                if (!chartArea) return null;
+                // Create gradient fill for the area under the curve
+                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Indigo with opacity
+                gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)'); // Fade to transparent
+                return gradient;
             },
-            markers: {
-                size: 0, // Hide markers on all views for cleaner look
-                hover: {
-                    size: 6, // Still show marker on hover for better user experience
-                    sizeOffset: 3
-                }
+            borderWidth: 3,
+            tension: 0.4, // Smooth curve
+            pointRadius: 0, // No points by default
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#ffffff',
+            pointHoverBorderColor: '#6366f1',
+            pointHoverBorderWidth: 3,
+            fill: true
+        });
+
+        // Config
+        const config = {
+            type: 'line',
+            data: {
+                datasets: datasets
             },
-            series: series,
-            xaxis: {
-                type: "datetime",
-                title: { text: "Time" },
-                labels: {
-                    datetimeUTC: false, // Use local time
-                    format: currentRange === "daily" ? "HH:mm" : "MMM dd"
-                }
-            },
-            yaxis: {
-                title: {
-                    text: scale === 1 ? "RC Cost" : 
-                          scale === 1e6 ? "RC Cost (millions)" :
-                          "RC Cost (billions)"
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
                 },
-                min: 0,
-                labels: {
-                    formatter: (value) => {
-                        if (value == null || isNaN(value)) return "";
-                        return value.toLocaleString();
-                    }
-                }
-            },
-            stroke: {
-                curve: "smooth",
-                width: 2
-            },
-            tooltip: {
-                enabled: true,
-                custom: function({ series, seriesIndex, dataPointIndex, w }) {
-                    // Format the date properly
-                    const timestamp = w.globals.seriesX[0][dataPointIndex];
-                    const date = new Date(timestamp);
-                    const dateStr = currentRange === "daily" 
-                        ? date.toLocaleString() 
-                        : date.toLocaleDateString();
-                    
-                    // Get the value from the main series (blue line)
-                    const value = w.globals.series[0][dataPointIndex];
-                    const valueStr = value !== undefined && !isNaN(value) 
-                        ? value.toLocaleString() 
-                        : "-";
-                    
-                    // Start building tooltip HTML
-                    let tooltipHtml = `
-                        <div class="apexcharts-tooltip-title">
-                            ${dateStr}
-                        </div>
-                        <div class="apexcharts-tooltip-series-group active" style="padding: 8px; display: flex;">
-                            <span class="apexcharts-tooltip-marker" style="background-color: #0d6efd;"></span>
-                            <div class="apexcharts-tooltip-text">
-                                <div class="apexcharts-tooltip-y-group">
-                                    <span class="apexcharts-tooltip-text-y-label">Value: </span>
-                                    <span class="apexcharts-tooltip-text-y-value">${valueStr}</span>
-                                </div>
-                            </div>
-                        </div>`;
-                    
-                    // Add min/max if we're showing the band
-                    if (showBand) {
-                        // Direct access to the range area data
-                        const rangeIdx = w.globals.seriesNames.findIndex(name => name === "Range");
-                        
-                        if (rangeIdx !== -1) {
-                            // Get min and max from the range area series
-                            const min = w.globals.seriesRangeStart[rangeIdx][dataPointIndex];
-                            const max = w.globals.seriesRangeEnd[rangeIdx][dataPointIndex];
-                            
-                            if (min !== undefined && max !== undefined) {
-                                const minStr = min.toLocaleString();
-                                const maxStr = max.toLocaleString();
-                                
-                                tooltipHtml += `
-                                <div class="apexcharts-tooltip-series-group active" style="padding: 8px; display: flex;">
-                                    <span class="apexcharts-tooltip-marker" style="background-color: #cfe2ff;"></span>
-                                    <div class="apexcharts-tooltip-text">
-                                        <div class="apexcharts-tooltip-y-group">
-                                            <span class="apexcharts-tooltip-text-y-label">Min / Max: </span>
-                                            <span class="apexcharts-tooltip-text-y-value">${minStr} / ${maxStr}</span>
-                                        </div>
-                                    </div>
-                                </div>`;
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#1f2937',
+                        bodyColor: '#4b5563',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10,
+                        boxPadding: 4,
+                        usePointStyle: true,
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toLocaleString();
+                                }
+                                return label;
                             }
                         }
                     }
-                    
-                    return tooltipHtml;
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: currentRange === 'daily' ? 'hour' : 'day',
+                            displayFormats: {
+                                hour: 'HH:mm',
+                                day: 'MMM dd'
+                            },
+                            tooltipFormat: 'MMM dd, HH:mm'
+                        },
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#9ca3af',
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f3f4f6',
+                            borderDash: [5, 5],
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: function (value) {
+                                return value.toLocaleString() + (data.unit ? "" : "");
+                            }
+                        },
+                        title: {
+                            display: !!data.unit,
+                            text: "RC Cost" + data.unit,
+                            color: '#6b7280',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
                 }
-            },
-            // Additional visual configurations
-            dataLabels: {
-                enabled: false
-            },
-            grid: {
-                borderColor: '#f1f1f1',
-                row: {
-                    colors: ['transparent', 'transparent']
-                }
-            },
-            legend: {
-                position: 'top',
-                horizontalAlign: 'left'
             }
         };
-        
-        // Update existing chart or create new one
-        if (chart) {
-            chart.updateOptions(options);
-        } else {
-            // Clean container
-            chartContainer.innerHTML = "";
-            
-            // Create new chart
-            chart = new ApexCharts(chartContainer, options);
-            window.costChartInstance = chart;
-            
-            try {
-                chart.render();
-            } catch (err) {
-                console.error("ApexCharts render error:", err);
-                chartContainer.innerHTML = "<p class='text-danger'>Error rendering chart. Please try refreshing the page.</p>";
-            }
-        }
+
+        chartInstance = new Chart(ctx, config);
     }
 
     /**
-     * Fetch RC cost data from the API
+     * Fetch Data
      */
     function fetchData() {
-        fetch("/api/rc_cost_data?hours=720") // Get 30 days of data
+        // Fetch 30 days of data (720 hours)
+        fetch("/api/rc_cost_data?hours=720")
             .then(response => response.json())
             .then(data => {
                 rawLabels = data.labels || [];
-                rawCosts = Array.isArray(data.costs) ? data.costs.map(cost => Number(cost)) : [];
+                rawCosts = Array.isArray(data.costs) ? data.costs.map(Number) : [];
                 drawChart();
             })
             .catch(error => {
-                console.error("RC cost data fetch error:", error);
-                chartContainer.innerHTML = "<p class='text-danger'>Error loading chart data. Please try refreshing the page.</p>";
+                console.error("RC chart error:", error);
+                chartCanvas.innerHTML = "<p class='text-danger text-center'>Error loading chart data</p>";
             });
     }
 
-    // Initialize chart
+    // Init
     if (rangeSelectorEl) {
-        // Set up range selector buttons (daily/weekly/monthly)
         rangeSelectorEl.addEventListener("click", (event) => {
             const button = event.target.closest("[data-range]");
             if (!button) return;
-            
+
             const range = button.dataset.range;
             if (range && range !== currentRange) {
-                // Update active state
                 currentRange = range;
                 rangeSelectorEl.querySelectorAll("button").forEach(btn => {
                     btn.classList.toggle("active", btn === button);
                 });
-                
-                // Redraw chart with new range
                 drawChart();
             }
         });
     }
 
-    // Initial data fetch
     fetchData();
 })();
