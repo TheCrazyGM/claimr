@@ -36,11 +36,24 @@
     toastEl.setAttribute("role", "alert");
     toastEl.setAttribute("aria-live", "assertive");
     toastEl.setAttribute("aria-atomic", "true");
-    toastEl.innerHTML = `
-      <div class="d-flex">
-        <div class="toast-body">${message}</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>`;
+
+    const dFlex = document.createElement("div");
+    dFlex.className = "d-flex";
+
+    const toastBody = document.createElement("div");
+    toastBody.className = "toast-body";
+    toastBody.textContent = message;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "btn-close btn-close-white me-2 m-auto";
+    closeBtn.setAttribute("data-bs-dismiss", "toast");
+    closeBtn.setAttribute("aria-label", "Close");
+
+    dFlex.appendChild(toastBody);
+    dFlex.appendChild(closeBtn);
+    toastEl.appendChild(dFlex);
+
     container.appendChild(toastEl);
     const bsToast = new bootstrap.Toast(toastEl, { delay: duration });
     bsToast.show();
@@ -50,17 +63,28 @@
   function showStatus(el, msg, type = "info") {
     const icon =
       type === "success"
-        ? "bi-check-circle-fill"
-        : type === "danger"
-          ? "bi-x-circle-fill"
-          : "bi-info-circle";
-    el.innerHTML = `<div class="alert alert-${type} py-2 mb-0"><i class="bi ${icon} me-1"></i>${msg}</div>`;
+      ? "bi-check-circle-fill"
+      : type === "danger"
+      ? "bi-x-circle-fill"
+      : "bi-info-circle";
+
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert alert-${type} py-2 mb-0`;
+
+    const i = document.createElement("i");
+    i.className = `bi ${icon} me-1`;
+
+    alertDiv.appendChild(i);
+    alertDiv.appendChild(document.createTextNode(msg));
+
+    el.innerHTML = "";
+    el.appendChild(alertDiv);
   }
 
   // Track validation status
   let claimerValid = false;
   let newUsernameValid = false;
-  
+
   // Check if both validations are complete and proceed if so
   function checkBothValidations() {
     if (claimerValid && newUsernameValid) {
@@ -69,7 +93,7 @@
       checkClaimerBtn.disabled = true;
       newUserInput.disabled = true;
       checkNewuserBtn.disabled = true;
-      
+
       // Proceed to password section
       passwordSection.style.display = "";
       generatePassword();
@@ -91,19 +115,11 @@
       if (!data.success) throw new Error(data.message || "Error");
       const claims = data.claims || 0;
       if (claims < 1) {
-        showStatus(
-          claimerStatus,
-          `You have no pending claimed accounts.`,
-          "danger",
-        );
+        showStatus(claimerStatus, `You have no pending claimed accounts.`, "danger");
         claimerValid = false;
         return;
       }
-      showStatus(
-        claimerStatus,
-        `You have ${claims} pending claimed accounts!`,
-        "success",
-      );
+      showStatus(claimerStatus, `You have ${claims} pending claimed accounts!`, "success");
       // Mark claimer as valid
       claimerValid = true;
       // Lock this input after successful validation
@@ -132,11 +148,7 @@
     try {
       const accounts = await client.database.getAccounts([name]);
       if (accounts && accounts.length) {
-        showStatus(
-          newuserStatus,
-          `@${name} already exists. Choose another.`,
-          "danger",
-        );
+        showStatus(newuserStatus, `@${name} already exists. Choose another.`, "danger");
         newUsernameValid = false;
         return;
       }
@@ -177,11 +189,9 @@
       passwordInput.value = mnemonic;
     } catch (e) {
       // fallback if BIP39 not available
-      const charset =
-        "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789";
+      const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789";
       let pass = "";
-      for (let i = 0; i < 32; i++)
-        pass += charset[Math.floor(Math.random() * charset.length)];
+      for (let i = 0; i < 32; i++) pass += charset[Math.floor(Math.random() * charset.length)];
       passwordInput.value = pass;
     }
     updateKeys();
@@ -269,9 +279,7 @@
     hive_keychain.requestBroadcast(creator, [op], "Active", (resp) => {
       if (resp.success) {
         const link =
-          resp.result && resp.result.id
-            ? `https://hivehub.dev/tx/${resp.result.id}`
-            : null;
+          resp.result && resp.result.id ? `https://hivehub.dev/tx/${resp.result.id}` : null;
         showToast(`Broadcast sent! Redirecting...`, "success");
         setTimeout(() => {
           const url = `/claim-account/success?tx=${resp.result.id}&acc=${encodeURIComponent(newAcc)}`;
@@ -280,8 +288,8 @@
       } else {
         const msg =
           resp.message === "user_cancel"
-            ? "Transaction cancelled by user"
-            : `Broadcast failed: ${resp.message || "Unknown error"}`;
+          ? "Transaction cancelled by user"
+          : `Broadcast failed: ${resp.message || "Unknown error"}`;
         const level = resp.message === "user_cancel" ? "secondary" : "danger";
         showToast(msg, level);
       }
@@ -294,13 +302,13 @@
   regenPassBtn.addEventListener("click", generatePassword);
   passwordInput.addEventListener("input", updateKeys);
   downloadKeysBtn.addEventListener("click", downloadKeys);
-  
+
   // Reset buttons
   const resetBtn = document.getElementById("reset-flow-btn");
   resetBtn.addEventListener("click", resetFlow);
   const topResetBtn = document.getElementById("top-reset-btn");
   topResetBtn.addEventListener("click", resetFlow);
-  
+
   createBtn.addEventListener("click", handleCreateAccount);
 
   function resetFlow() {
@@ -325,7 +333,7 @@
     passwordInput.value = "";
     keysDisplay.textContent = "";
     generatedKeys = null;
-    
+
     // reset validation flags
     claimerValid = false;
     newUsernameValid = false;

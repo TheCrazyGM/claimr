@@ -16,19 +16,23 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Hive Keychain Claim Handlers ---
-  function showStatus(msg, type = "info") {
+  function showStatus(msg, type = "info", extraNode = null) {
     const el = document.getElementById("claim-status");
-    el.innerHTML = `<div class="alert alert-${type} py-2 mb-0">${msg}</div>`;
+    const div = document.createElement("div");
+    div.className = `alert alert-${type} py-2 mb-0`;
+    div.textContent = msg;
+    if (extraNode) {
+      div.appendChild(extraNode);
+    }
+    el.innerHTML = "";
+    el.appendChild(div);
   }
 
   window.claimInProgress = window.claimInProgress || false;
   function handleClaim(single = true) {
     if (claimInProgress) return;
     if (!window.hive_keychain) {
-      showStatus(
-        "Hive Keychain is not installed or not enabled in your browser.",
-        "danger",
-      );
+      showStatus("Hive Keychain is not installed or not enabled in your browser.", "danger");
       return;
     }
     const username = usernameInput.value.trim();
@@ -36,10 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
       showStatus("Please enter your Hive username.", "warning");
       return;
     }
-    const op = [
-      "claim_account",
-      { creator: username, fee: "0.000 HIVE", extensions: [] },
-    ];
+    const op = ["claim_account", { creator: username, fee: "0.000 HIVE", extensions: [] }];
     let ops = single ? [op] : [];
     const claimCount = single ? 1 : parseInt(countInput.value) || 2;
     if (!single) {
@@ -59,56 +60,37 @@ document.addEventListener("DOMContentLoaded", function () {
         estimatedCost = rcData.most_recent_cost || 0;
 
         // Proceed with the claim operation
-        window.hive_keychain.requestBroadcast(
-          username,
-          ops,
-          "Active",
-          function (response) {
-            claimInProgress = false;
-            if (response.success) {
-              showStatus(
-                "Claim broadcast sent! Checking RC usage...",
-                "success",
-              );
+        window.hive_keychain.requestBroadcast(username, ops, "Active", function (response) {
+          claimInProgress = false;
+          if (response.success) {
+            showStatus("Claim broadcast sent! Checking RC usage...", "success");
 
-              // Wait a moment for the blockchain to process the transaction
-              setTimeout(() => {
-                // Check RC after the claim
-                fetch(`/api/rc/${encodeURIComponent(username)}`)
-                  .then((response) => response.json())
-                  .then((data) => {
-                    if (
-                      data.success &&
-                      data.rc &&
-                      typeof data.rc.current_mana === "number"
-                    ) {
-                      const rcAfter = data.rc.current_mana;
-                      const rcUsed = rcBefore - rcAfter;
-                      // Scale the estimated cost based on the number of claims
-                      const totalEstimatedCost =
-                        estimatedCost * totalClaimCount;
-                      // Use more precise calculation for large numbers
-                      const percentDiff =
-                        totalEstimatedCost > 0
-                          ? parseFloat(
-                              ((rcUsed / totalEstimatedCost) * 100).toFixed(2),
-                            )
-                          : 0;
+            // Wait a moment for the blockchain to process the transaction
+            setTimeout(() => {
+              // Check RC after the claim
+              fetch(`/api/rc/${encodeURIComponent(username)}`)
+                .then((response) => response.json())
+                .then((data) => {
+                  if (data.success && data.rc && typeof data.rc.current_mana === "number") {
+                    const rcAfter = data.rc.current_mana;
+                    const rcUsed = rcBefore - rcAfter;
+                    // Scale the estimated cost based on the number of claims
+                    const totalEstimatedCost = estimatedCost * totalClaimCount;
+                    // Use more precise calculation for large numbers
+                    const percentDiff =
+                      totalEstimatedCost > 0
+                      ? parseFloat(((rcUsed / totalEstimatedCost) * 100).toFixed(2))
+                      : 0;
 
-                      // Update the last RC check value
-                      lastRcCheck = rcAfter;
+                    // Update the last RC check value
+                    lastRcCheck = rcAfter;
 
-                      // Update UI with RC usage information
-                      showStatus(
-                        `Claim successful! Check the RC usage details below.`,
-                        "success",
-                      );
+                    // Update UI with RC usage information
+                    showStatus(`Claim successful! Check the RC usage details below.`, "success");
 
-                      // Display detailed RC usage comparison in the dedicated section
-                      const rcComparisonEl = document.getElementById(
-                        "rc-usage-comparison",
-                      );
-                      rcComparisonEl.innerHTML = `
+                    // Display detailed RC usage comparison in the dedicated section
+                    const rcComparisonEl = document.getElementById("rc-usage-comparison");
+                    rcComparisonEl.innerHTML = `
                                               <div class="card border-info shadow-sm rounded">
                                                 <div class="card-body p-3">
                                                   <h6 class="card-title mb-2">RC Usage Details</h6>
@@ -136,66 +118,66 @@ document.addEventListener("DOMContentLoaded", function () {
                                               </div>
                                             `;
 
-                      // Update the RC bar
-                      const maxRc = data.rc.max_mana;
-                      const percent = Math.round((100 * rcAfter) / maxRc);
-                      document.getElementById("rc-bar").innerHTML = `
-                                              <div class='progress' title='${rcAfter.toLocaleString()} / ${maxRc.toLocaleString()}'>
-                                                <div class='progress-bar bg-info' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'>${percent}%</div>
-                                              </div>
-                                              <div class='text-center small text-muted mt-1'>${rcAfter.toLocaleString()} / ${maxRc.toLocaleString()} RC</div>
-                                            `;
+                    // Update the RC bar
+                    const maxRc = data.rc.max_mana;
+                    const percent = Math.round((100 * rcAfter) / maxRc);
 
-                      // Update claim buttons based on new RC value
-                      if (estimatedCost > 0) {
-                        rcSufficient = rcAfter >= estimatedCost;
-                        updateClaimButtons();
-                      }
-                    } else {
-                      showStatus(
-                        "Claim successful! Could not check updated RC: " +
-                          (data.message || "Unknown error"),
-                        "success",
-                      );
+                    const rcBarEl = document.getElementById("rc-bar");
+                    rcBarEl.innerHTML = "";
+
+                    const progressDiv = document.createElement("div");
+                    progressDiv.className = "progress";
+                    progressDiv.title = `${rcAfter.toLocaleString()} / ${maxRc.toLocaleString()}`;
+
+                    const progressBar = document.createElement("div");
+                    progressBar.className = "progress-bar bg-info";
+                    progressBar.role = "progressbar";
+                    progressBar.style.width = `${percent}%`;
+                    progressBar.setAttribute("aria-valuenow", percent);
+                    progressBar.setAttribute("aria-valuemin", "0");
+                    progressBar.setAttribute("aria-valuemax", "100");
+                    progressBar.textContent = `${percent}%`;
+
+                    progressDiv.appendChild(progressBar);
+                    rcBarEl.appendChild(progressDiv);
+
+                    const labelDiv = document.createElement("div");
+                    labelDiv.className = "text-center small text-muted mt-1";
+                    labelDiv.textContent = `${rcAfter.toLocaleString()} / ${maxRc.toLocaleString()} RC`;
+                    rcBarEl.appendChild(labelDiv);
+
+                    // Update claim buttons based on new RC value
+                    if (estimatedCost > 0) {
+                      rcSufficient = rcAfter >= estimatedCost;
+                      updateClaimButtons();
                     }
-                  })
-                  .catch((err) => {
+                  } else {
                     showStatus(
-                      "Claim successful! Error checking updated RC: " + err,
+                      "Claim successful! Could not check updated RC: " +
+                      (data.message || "Unknown error"),
                       "success",
                     );
-                  });
-              }, 3000); // Wait 3 seconds for blockchain to process
-            } else {
-              showStatus(
-                "Keychain error: " + (response.message || "Unknown error"),
-                "danger",
-              );
-            }
-          },
-        );
+                  }
+                })
+                .catch((err) => {
+                  showStatus("Claim successful! Error checking updated RC: " + err, "success");
+                });
+            }, 3000); // Wait 3 seconds for blockchain to process
+          } else {
+            showStatus("Keychain error: " + (response.message || "Unknown error"), "danger");
+          }
+        });
       })
       .catch((err) => {
         // If we can't get the estimated cost, proceed with the claim anyway
-        window.hive_keychain.requestBroadcast(
-          username,
-          ops,
-          "Active",
-          function (response) {
-            claimInProgress = false;
-            if (response.success) {
-              showStatus(
-                "Claim broadcast sent! Check Hive Engine for account credit.",
-                "success",
-              );
-            } else {
-              showStatus(
-                "Keychain error: " + (response.message || "Unknown error"),
-                "danger",
-              );
-            }
-          },
-        );
+        window.hive_keychain.requestBroadcast(username, ops, "Active", function (response) {
+          claimInProgress = false;
+          if (response.success) {
+            showStatus("Claim broadcast sent! Check Hive Engine for account credit.", "success");
+          } else {
+            showStatus("Keychain error: " + (response.message || "Unknown error"), "danger");
+          }
+        });
       });
   }
 
@@ -243,45 +225,74 @@ document.addEventListener("DOMContentLoaded", function () {
               } else {
                 countInput.value = 1;
                 rcSufficient = false;
-                countInput.title =
-                  "Not enough RC to claim more than 1 account.";
+                countInput.title = "Not enough RC to claim more than 1 account.";
               }
               updateClaimButtons();
 
               // Render progress bar
-              document.getElementById("rc-bar").innerHTML = `
-                                <div class='progress' title='${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()}'>
-                                    <div class='progress-bar bg-info' role='progressbar' style='width: ${percent}%' aria-valuenow='${percent}' aria-valuemin='0' aria-valuemax='100'>${percent}%</div>
-                                </div>
-                                <div class='text-center small text-muted mt-1'>${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()} RC</div>
-                            `;
+              const rcBarEl = document.getElementById("rc-bar");
+              rcBarEl.innerHTML = "";
+
+              const progressDiv = document.createElement("div");
+              progressDiv.className = "progress";
+              progressDiv.title = `${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()}`;
+
+              const progressBar = document.createElement("div");
+              progressBar.className = "progress-bar bg-info";
+              progressBar.role = "progressbar";
+              progressBar.style.width = `${percent}%`;
+              progressBar.setAttribute("aria-valuenow", percent);
+              progressBar.setAttribute("aria-valuemin", "0");
+              progressBar.setAttribute("aria-valuemax", "100");
+              progressBar.textContent = `${percent}%`;
+
+              progressDiv.appendChild(progressBar);
+              rcBarEl.appendChild(progressDiv);
+
+              const labelDiv = document.createElement("div");
+              labelDiv.className = "text-center small text-muted mt-1";
+              labelDiv.textContent = `${lastRcCheck.toLocaleString()} / ${maxRc.toLocaleString()} RC`;
+              rcBarEl.appendChild(labelDiv);
 
               // Handle claims message
-              let claimsMsg = "";
+              let extraNode = null;
               if (typeof data.claims === "number") {
-                claimsMsg = `<br><span class='rc-teal'>You already have <b>${data.claims}</b> claimed account${data.claims === 1 ? "" : "s"} ready to use.</span>`;
+                extraNode = document.createElement("div");
+                extraNode.appendChild(document.createElement("br"));
+                const span = document.createElement("span");
+                span.className = "rc-teal";
+                span.appendChild(document.createTextNode("You already have "));
+                const b = document.createElement("b");
+                b.textContent = data.claims;
+                span.appendChild(b);
+                span.appendChild(
+                  document.createTextNode(
+                    ` claimed account${data.claims === 1 ? "" : "s"} ready to use.`,
+                  ),
+                );
+                extraNode.appendChild(span);
               }
 
               // Show appropriate status message
               if (maxClaims > 0) {
                 showStatus(
                   "You have enough RC (" +
-                    lastRcCheck.toLocaleString() +
-                    ") to claim " +
-                    maxClaims +
-                    " account(s)!" +
-                    claimsMsg,
+                  lastRcCheck.toLocaleString() +
+                  ") to claim " +
+                  maxClaims +
+                  " account(s)!",
                   "success",
+                  extraNode,
                 );
               } else {
                 showStatus(
                   "Not enough RC. You have " +
-                    lastRcCheck.toLocaleString() +
-                    ", need " +
-                    (mostRecentCost || 0).toLocaleString() +
-                    " to claim 1 account." +
-                    claimsMsg,
+                  lastRcCheck.toLocaleString() +
+                  ", need " +
+                  (mostRecentCost || 0).toLocaleString() +
+                  " to claim 1 account.",
                   "danger",
+                  extraNode,
                 );
               }
             })
@@ -290,10 +301,7 @@ document.addEventListener("DOMContentLoaded", function () {
               document.getElementById("rc-bar").innerHTML = "";
             });
         } else {
-          showStatus(
-            "Could not check RC: " + (data.message || "Unknown error"),
-            "danger",
-          );
+          showStatus("Could not check RC: " + (data.message || "Unknown error"), "danger");
           document.getElementById("rc-bar").innerHTML = "";
         }
       })
@@ -309,8 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const maxValue = parseInt(countInput.max) || 1;
 
     // RC is sufficient as long as we have a valid number within range
-    rcSufficient =
-      currentValue >= 1 && currentValue <= maxValue && lastRcCheck !== null;
+    rcSufficient = currentValue >= 1 && currentValue <= maxValue && lastRcCheck !== null;
     updateClaimButtons();
   });
   usernameInput.addEventListener("input", function () {
@@ -332,10 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Update the most recent cost/time display
         const costEl = document.getElementById("most-recent-cost");
         const timeEl = document.getElementById("most-recent-time");
-        if (
-          data.most_recent_cost !== undefined &&
-          data.most_recent_cost !== null
-        ) {
+        if (data.most_recent_cost !== undefined && data.most_recent_cost !== null) {
           costEl.textContent = Number(data.most_recent_cost).toLocaleString();
         } else {
           costEl.textContent = "No data available";
@@ -356,7 +360,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Error fetching recent RC cost data:", err);
       });
   }
-  
+
   // Initial load of recent cost display
   updateRecentCostDisplay();
 });

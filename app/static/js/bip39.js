@@ -5,9 +5,7 @@ const BIP39 = (function () {
   // We expect the wordlist to be defined in words.js
   // Make sure words.js is included before this file
   if (typeof wordlist === "undefined") {
-    console.error(
-      "Wordlist is not defined. Make sure words.js is loaded before bip39.js",
-    );
+    console.error("Wordlist is not defined. Make sure words.js is loaded before bip39.js");
   }
 
   /**
@@ -17,11 +15,7 @@ const BIP39 = (function () {
    */
   function generateMnemonic(strength = 128) {
     // Validate that wordlist exists
-    if (
-      typeof wordlist === "undefined" ||
-      !Array.isArray(wordlist) ||
-      wordlist.length === 0
-    ) {
+    if (typeof wordlist === "undefined" || !Array.isArray(wordlist) || wordlist.length === 0) {
       throw new Error(
         "Wordlist is not properly defined. Make sure words.js is loaded before bip39.js",
       );
@@ -33,9 +27,7 @@ const BIP39 = (function () {
         return window.crypto.getRandomValues(buffer);
       } else {
         // Fallback to Math.random with warning
-        console.warn(
-          "Using Math.random fallback which is not cryptographically secure",
-        );
+        console.warn("Using Math.random fallback which is not cryptographically secure");
         for (let i = 0; i < buffer.length; i++) {
           buffer[i] = Math.floor(Math.random() * 256);
         }
