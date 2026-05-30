@@ -11,3 +11,6 @@ dependencies = [
   "hive-nectar>=0.0.5",
   "python-dotenv>=1.1.0",
 ]
+
+[tool.uv.sources]
+hive-nectar = { git = "https://github.com/srbde/hive-nectar", rev = "main" }

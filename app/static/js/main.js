@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let totalClaimCount = claimCount;
 
     // Get the most recent estimated cost before claiming
-    fetch("/api/rc_cost_data?hours=720")
+    fetch("/api/rc_cost_data?limit=1")
       .then((r) => r.json())
       .then((rcData) => {
         estimatedCost = rcData.most_recent_cost || 0;
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
           const percent = Math.round((100 * lastRcCheck) / maxRc);
 
           // Fetch RC cost data to calculate max claims
-          fetch("/api/rc_cost_data?hours=720")
+          fetch("/api/rc_cost_data?limit=1")
             .then((r) => r.json())
             .then((rcData) => {
               const mostRecentCost = rcData.most_recent_cost || 0;
@@ -333,7 +333,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Update the most recent estimated RC claim cost display
   function updateRecentCostDisplay() {
-    fetch("/api/rc_cost_data?hours=720")
+    fetch("/api/rc_cost_data?limit=1")
       .then((response) => response.json())
       .then((data) => {
         // Update the most recent cost/time display

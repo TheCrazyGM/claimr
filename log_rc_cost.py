@@ -39,6 +39,11 @@ def log_cost():
     db = dataset.connect(DB_PATH)
     table = db["rc_costs"]
     table.insert(dict(timestamp=now, claim_cost=cost))
+    # Ensure index exists on timestamp
+    try:
+        table.create_index(["timestamp"])
+    except Exception as e:
+        print(f"Error creating index on timestamp: {e}")
     print(f"[{now}] RC cost logged: {cost}")
 
 
