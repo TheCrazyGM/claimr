@@ -6,6 +6,10 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: debug-statements
       - id: check-added-large-files
   # Scan for hard-coded secrets
   - repo: https://github.com/gitleaks/gitleaks
@@ -14,7 +18,7 @@ repos:
       - id: gitleaks
   # Run ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.12
+    rev: v0.15.14
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -23,7 +27,7 @@ repos:
       - id: ruff-format
   # Format html/css/js
   - repo: https://github.com/rtts/djhtml
-    rev: '3.0.11' # replace with the latest tag on GitHub
+    rev: 3.0.11
     hooks:
       - id: djhtml
       - id: djcss

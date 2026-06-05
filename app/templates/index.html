@@ -1,83 +1,77 @@
-{% extends "base.html" %} {% block content %}
-  <div class="row mt-4 mb-4">
-    <div class="col-md-6 mx-auto">
-      <div class="card text-center rc-cost-card rounded shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title mb-2">Most Recent Estimated RC Claim Cost</h5>
-          <p class="h3 fw-bold rc-primary" id="most-recent-cost">No data available</p>
-          <p class="mb-0">
-            <small class="text-muted" id="most-recent-time"></small>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="card shadow-sm rounded">
-    <div class="card-body">
-      <h3 class="card-title mb-4">RC Cost Over Time</h3>
-      <div class="d-flex justify-content-end mb-2">
-        <div
-          class="btn-group btn-group-sm"
-          id="rangeSelector"
-          role="group"
-          aria-label="Select time range"
-        >
-          <button type="button" class="btn btn-outline-secondary active" data-range="daily">
-            Daily
-          </button>
-          <button type="button" class="btn btn-outline-secondary" data-range="weekly">Weekly</button>
-          <button type="button" class="btn btn-outline-secondary" data-range="monthly">
-            Monthly
-          </button>
-        </div>
-      </div>
-      <div id="costChart"></div>
-    </div>
-  </div>
+{% extends "base.html" %}
 
-<!-- Claim Section -->
-  <div class="row mt-4">
-    <div class="col-lg-7 col-md-8 mx-auto">
-      <div class="card border-success shadow-sm rounded">
-        <div class="card-body">
-          <h5 class="card-title mb-3 text-center">
-            <i class="bi bi-box-arrow-in-right me-1"></i>Claim Account(s)
-          </h5>
-          <div class="row g-2 align-items-center justify-content-center mb-3">
-            <div class="col-12 col-md-7">
-              <input
-                type="text"
-                id="claim-username"
-                class="form-control"
-                placeholder="Hive username"
-                autocomplete="username"
-                aria-label="Hive username"
-              />
+{% block content %}
+  <div class="container claimr-page">
+    <section class="claimr-hero">
+      <div>
+        <div class="claimr-kicker">Hive Resource Credit monitor</div>
+        <h1 class="claimr-title">RC Claim Console</h1>
+        <p class="claimr-summary">
+          Track account-claim cost, check available Resource Credits, and claim one or more Hive
+          account tickets through Keychain.
+        </p>
+      </div>
+    </section>
+
+    <div class="claimr-grid">
+      <div class="d-flex flex-column gap-3">
+        <section class="claimr-panel">
+          <div class="claimr-panel-body">
+            <div class="claimr-metric">
+              <div class="claimr-metric-icon">
+                <i class="bi bi-lightning-charge-fill"></i>
+              </div>
+              <div>
+                <div class="claimr-label">Most recent estimated claim cost</div>
+                <p class="h2 fw-bold rc-primary mb-1" id="most-recent-cost">No data available</p>
+                <small class="text-muted" id="most-recent-time"></small>
+              </div>
             </div>
           </div>
-          <div class="d-flex flex-wrap justify-content-center mb-3">
-            <button
-              id="check-rc-btn"
-              class="btn btn-info px-4 mb-2 w-100 w-md-auto"
-              type="button"
-              aria-label="Check Resource Credits"
-            >
-              <i class="bi bi-lightning me-1" data-bs-toggle="tooltip" title="Check RC"></i>Check RC
-              <span
-                id="rc-loading"
-                class="spinner-border spinner-border-sm ms-2 d-none"
-                role="status"
-                aria-hidden="true"
-              ></span>
+        </section>
+
+        <section class="claimr-panel">
+          <div class="claimr-panel-header">
+            <h2 class="claimr-panel-title">RC Cost Over Time</h2>
+            <div class="btn-group btn-group-sm" id="rangeSelector" role="group" aria-label="Select time range">
+              <button type="button" class="btn btn-outline-secondary active" data-range="daily">Daily</button>
+              <button type="button" class="btn btn-outline-secondary" data-range="weekly">Weekly</button>
+              <button type="button" class="btn btn-outline-secondary" data-range="monthly">Monthly</button>
+            </div>
+          </div>
+          <div class="claimr-panel-body claimr-chart-wrap">
+            <div id="costChart"></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="claimr-panel claimr-claim-panel">
+        <div class="claimr-panel-header">
+          <h2 class="claimr-panel-title">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Claim Account Tickets
+          </h2>
+        </div>
+        <div class="claimr-panel-body">
+          <label for="claim-username" class="form-label fw-semibold">Hive username</label>
+          <input
+            type="text"
+            id="claim-username"
+            class="form-control mb-3"
+            placeholder="your-account"
+            autocomplete="username"
+            aria-label="Hive username"
+          />
+
+          <button id="check-rc-btn" class="btn btn-info w-100 mb-3" type="button" aria-label="Check Resource Credits">
+            <i class="bi bi-lightning me-1" data-bs-toggle="tooltip" title="Check RC"></i>Check RC
+            <span id="rc-loading" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+          </button>
+
+          <div class="d-grid gap-2 mb-3">
+            <button id="claim-btn" class="btn btn-success" type="button">
+              <i class="bi bi-check-circle me-1"></i>Claim One
             </button>
-          </div>
-          <div class="row g-2 justify-content-center align-items-center mb-2">
-            <div class="col-12 col-md-auto mb-2 mb-md-0">
-              <button id="claim-btn" class="btn btn-success" type="button">
-                <i class="bi bi-check-circle me-1"></i>Claim One
-              </button>
-            </div>
-            <div class="col-12 col-md-auto d-flex align-items-center gap-2">
+            <div class="input-group">
               <input
                 type="number"
                 id="claim-multi-count"
@@ -86,43 +80,36 @@
                 max="10"
                 value="1"
                 title="Number to claim"
-                placeholder="Count (1 to max)"
-                style="max-width: 90px"
+                placeholder="Count"
               />
               <button id="claim-multi-btn" class="btn btn-outline-success" type="button">
                 <i class="bi bi-collection me-1"></i>Claim Multiple
               </button>
             </div>
           </div>
-          <div class="row justify-content-center">
-            <div class="col-auto">
-              <small id="claim-count-helper" class="form-text text-muted"
-              >You may claim any number from 1 up to your maximum allowed.</small
-                >
-              </div>
-            </div>
-            <div class="d-flex justify-content-center">
-              <div id="claim-status" class="mt-2" style="max-width: 350px"></div>
-            </div>
-            <div class="d-flex justify-content-center">
-              <div id="rc-bar" class="w-100 mt-2" style="max-width: 400px"></div>
-            </div>
-            <div class="d-flex justify-content-center mt-2">
-              <div id="rc-usage-comparison" class="w-100" style="max-width: 400px"></div>
-            </div>
-            <div class="mt-2 text-center">
-              <small class="text-muted">You will sign with Hive Keychain</small>
-            </div>
+
+          <small id="claim-count-helper" class="form-text text-muted d-block mb-3">
+            You may claim any number from 1 up to your maximum allowed.
+          </small>
+
+          <div id="claim-status" class="mt-2"></div>
+          <div id="rc-bar" class="w-100 mt-2"></div>
+          <div id="rc-usage-comparison" class="w-100 mt-2"></div>
+
+          <div class="mt-3 small text-muted">
+            <i class="bi bi-shield-check me-1"></i>You will sign with Hive Keychain.
           </div>
         </div>
-      </div>
+      </section>
     </div>
+  </div>
+{% endblock %}
 
-    {% block scripts %}
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
 
-      <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-      <script src="{{ url_for('static', filename='js/rc_chart.js') }}"></script>
-    {% endblock %} {% endblock %}
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/rc_chart.js') }}"></script>
+{% endblock %}
