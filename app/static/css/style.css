@@ -20,10 +20,10 @@
 
 body {
   background:
-    linear-gradient(90deg, rgba(31, 94, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(244, 176, 0, 0.04) 1px, transparent 1px),
-    radial-gradient(circle at 12% 0%, rgba(244, 176, 0, 0.16), transparent 30rem),
-    var(--claimr-bg);
+  linear-gradient(90deg, rgba(31, 94, 255, 0.045) 1px, transparent 1px),
+  linear-gradient(180deg, rgba(244, 176, 0, 0.04) 1px, transparent 1px),
+  radial-gradient(circle at 12% 0%, rgba(244, 176, 0, 0.16), transparent 30rem),
+  var(--claimr-bg);
   background-size: 56px 56px, 56px 56px, auto, auto;
   color: var(--claimr-ink);
 }
