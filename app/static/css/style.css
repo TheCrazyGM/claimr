@@ -1,98 +1,373 @@
-/* Theme Colors */
+/* Claimr RC console theme */
+
 :root {
-  --rc-primary: #483d8b;
-  --rc-secondary: #00bfff;
-  --rc-success: #198754;
-  --rc-light: #ffffff;
-  --rc-border-radius: 0.5rem;
+  --claimr-bg: #f5f2ea;
+  --claimr-bg-rgb: 245, 242, 234;
+  --claimr-surface: #fffdf8;
+  --claimr-surface-2: #f0ece2;
+  --claimr-surface-3: #e7e1d3;
+  --claimr-border: rgba(32, 30, 25, 0.14);
+  --claimr-border-strong: rgba(32, 30, 25, 0.24);
+  --claimr-ink: #202025;
+  --claimr-muted: #68635a;
+  --claimr-electric: #1f5eff;
+  --claimr-electric-dark: #153da6;
+  --claimr-charge: #f4b000;
+  --claimr-success: #138a58;
+  --claimr-danger: #c9364c;
+  --claimr-radius: 0.55rem;
 }
 
 body {
-  background: var(--rc-light);
+  background:
+    linear-gradient(90deg, rgba(31, 94, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(244, 176, 0, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 12% 0%, rgba(244, 176, 0, 0.16), transparent 30rem),
+    var(--claimr-bg);
+  background-size: 56px 56px, 56px 56px, auto, auto;
+  color: var(--claimr-ink);
 }
 
-.navbar,
-.bg-primary,
+.claimr-shell {
+  flex: 1;
+}
+
+.claimr-nav {
+  background: rgba(var(--claimr-bg-rgb), 0.92);
+  border-bottom: 1px solid var(--claimr-border);
+  backdrop-filter: blur(16px);
+}
+
+.claimr-brand-mark {
+  align-items: center;
+  background: rgba(244, 176, 0, 0.16);
+  border: 1px solid rgba(244, 176, 0, 0.34);
+  border-radius: 0.45rem;
+  color: #9b6500;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.navbar-brand,
+.navbar .nav-link {
+  color: var(--claimr-ink) !important;
+}
+
+.navbar-brand {
+  font-weight: 800;
+}
+
+.navbar .nav-link {
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  font-weight: 600;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  background: var(--claimr-surface);
+  border-color: var(--claimr-border);
+  color: var(--claimr-electric) !important;
+}
+
+.claimr-page {
+  padding: 2rem 0 3rem;
+}
+
+.claimr-hero {
+  align-items: end;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 1.25rem;
+}
+
+.claimr-kicker {
+  color: var(--claimr-electric);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+}
+
+.claimr-title {
+  color: var(--claimr-ink);
+  font-size: clamp(2rem, 6vw, 4.4rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.claimr-summary {
+  color: var(--claimr-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+  margin: 0.8rem 0 0;
+  max-width: 46rem;
+}
+
+.claimr-status-strip {
+  background: var(--claimr-surface);
+  border: 1px solid var(--claimr-border);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 24rem;
+}
+
+.claimr-status-item {
+  padding: 0.85rem 1rem;
+}
+
+.claimr-status-item + .claimr-status-item {
+  border-left: 1px solid var(--claimr-border);
+}
+
+.claimr-label {
+  color: var(--claimr-muted);
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+}
+
+.claimr-value {
+  color: var(--claimr-ink);
+  display: block;
+  font-weight: 800;
+}
+
+.claimr-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.55fr);
+}
+
+.claimr-panel,
+.card {
+  background: var(--claimr-surface);
+  border: 1px solid var(--claimr-border);
+  border-radius: var(--claimr-radius);
+  box-shadow: none !important;
+}
+
+.claimr-panel-header {
+  align-items: center;
+  border-bottom: 1px solid var(--claimr-border);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+}
+
+.claimr-panel-title,
+.card-title {
+  color: var(--claimr-ink);
+  font-size: 1rem;
+  font-weight: 850;
+  margin: 0;
+}
+
+.claimr-panel-body {
+  padding: 1.15rem;
+}
+
+.claimr-metric {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+}
+
+.claimr-metric-icon {
+  align-items: center;
+  background: rgba(244, 176, 0, 0.18);
+  border: 1px solid rgba(244, 176, 0, 0.34);
+  border-radius: 0.65rem;
+  color: #a46d00;
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 1.4rem;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.rc-primary,
+.text-info {
+  color: var(--claimr-electric) !important;
+}
+
+.text-muted {
+  color: var(--claimr-muted) !important;
+}
+
+.btn {
+  border-radius: 0.45rem;
+  font-weight: 650;
+}
+
 .btn-primary,
-.btn-info,
-.bg-info,
-.progress-bar.bg-info {
-  background-color: var(--rc-primary) !important;
-  border-color: var(--rc-primary) !important;
-}
-
 .btn-info {
+  background: var(--claimr-electric) !important;
+  border-color: var(--claimr-electric) !important;
   color: #fff !important;
 }
 
-.progress-bar.bg-info {
-  color: #fff !important;
+.btn-primary:hover,
+.btn-info:hover {
+  background: var(--claimr-electric-dark) !important;
+  border-color: var(--claimr-electric-dark) !important;
 }
 
-.text-info,
-.rc-primary {
-  color: var(--rc-primary) !important;
+.btn-success {
+  background: var(--claimr-success);
+  border-color: var(--claimr-success);
 }
 
-.card.border-info,
-.card.border-success {
-  border-width: 2px;
+.btn-outline-success {
+  border-color: var(--claimr-success);
+  color: var(--claimr-success);
 }
 
-.card.border-info {
-  border-color: var(--rc-primary) !important;
+.form-control,
+.input-group-text {
+  background-color: #fff;
+  border-color: var(--claimr-border-strong);
+  border-radius: 0.45rem;
 }
 
-.card.border-success {
-  border-color: var(--rc-success) !important;
+.form-control:focus {
+  border-color: var(--claimr-electric);
+  box-shadow: 0 0 0 0.2rem rgba(31, 94, 255, 0.14);
 }
 
-/* Custom for RC Cost Card */
-.rc-cost-card {
-  border: 2px solid var(--rc-primary) !important;
-  border-radius: var(--rc-border-radius);
+.claimr-claim-panel .form-control {
+  min-height: 2.5rem;
 }
 
-.display-6.fw-bold.rc-primary {
-  color: var(--rc-primary) !important;
+.claimr-chart-wrap {
+  min-height: 420px;
 }
 
-/* Misc */
-#rc-bar .progress {
-  height: 1.25rem;
-  border-radius: var(--rc-border-radius);
-}
-
-#rc-bar .progress-bar {
-  font-size: 0.95rem;
-}
-
-/* Add your custom styles below this line */
-
-.footer a.text-light:hover {
-  color: #90e0ef;
+#costChart {
+  min-height: 360px;
 }
 
 #rc-bar {
-  max-width: 400px;
+  max-width: 100%;
 }
 
 #claim-status {
-  max-width: 350px;
+  max-width: 100%;
 }
 
-/* Add spinner utility for RC loading */
+#rc-bar .progress {
+  background: var(--claimr-surface-3);
+  border-radius: 999px;
+  height: 1.15rem;
+}
+
+#rc-bar .progress-bar {
+  background-color: var(--claimr-electric) !important;
+  color: #fff !important;
+  font-size: 0.82rem;
+}
+
+.claimr-step-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.claimr-step {
+  background: var(--claimr-surface);
+  border: 1px solid var(--claimr-border);
+  border-radius: var(--claimr-radius);
+  padding: 1rem;
+}
+
+.claimr-step-number {
+  align-items: center;
+  background: rgba(31, 94, 255, 0.1);
+  border: 1px solid rgba(31, 94, 255, 0.18);
+  border-radius: 999px;
+  color: var(--claimr-electric);
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 900;
+  height: 1.65rem;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+  width: 1.65rem;
+}
+
+#keys-display {
+  background: #15181f !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--claimr-radius);
+  color: #f8f3e8;
+}
+
+.alert {
+  border-radius: var(--claimr-radius);
+}
+
+.claimr-success-panel {
+  margin: 3rem auto 0;
+  max-width: 48rem;
+  text-align: center;
+}
+
+.footer {
+  background: var(--claimr-surface) !important;
+  border-top: 1px solid var(--claimr-border) !important;
+  color: var(--claimr-muted) !important;
+}
+
+.footer a {
+  color: var(--claimr-electric) !important;
+}
+
+.footer a:hover {
+  color: var(--claimr-electric-dark) !important;
+}
+
 #rc-loading.spinner-border {
   vertical-align: middle;
 }
 
-/* Remove button stretch on claim area */
 .claim-btn-row .btn {
   width: auto !important;
 }
 
-/* Footer */
-footer.footer {
-  background: #f8f9fa;
-  border-top: 1px solid #e5e5e5;
+@media (max-width: 991.98px) {
+  .claimr-hero,
+  .claimr-grid,
+  .claimr-step-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .claimr-status-strip {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .claimr-page {
+    padding-top: 1.25rem;
+  }
+
+  .claimr-status-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .claimr-status-item + .claimr-status-item {
+    border-left: 0;
+    border-top: 1px solid var(--claimr-border);
+  }
 }

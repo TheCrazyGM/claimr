@@ -20,12 +20,14 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" />
   </head>
 
-  <body class="bg-light d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #483d8b">
+  <body class="d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-expand-lg claimr-nav">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="/" aria-label="RC Cost Chart Home">
-          <i class="bi bi-lightning-charge me-2" aria-hidden="true"></i>
-          <span class="fw-bold fs-4">RC Cost Chart</span>
+          <span class="claimr-brand-mark me-2">
+            <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i>
+          </span>
+          <span>Claimr</span>
         </a>
         <button
           class="navbar-toggler"
@@ -53,11 +55,11 @@
             <li class="nav-item">
               <a
                 class="nav-link"
-                href="https://crypto-dreamr.com"
+                href="https://tools.crypto-dreamr.com"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <i class="bi bi-box-arrow-up-right me-1"></i>crypto-dreamr.com
+                <i class="bi bi-box-arrow-up-right me-1"></i>tools.crypto-dreamr.com
               </a>
             </li>
             <!--
@@ -72,16 +74,14 @@
         </div>
       </div>
     </nav>
-    <div class="container">{% block content %}{% endblock %}</div>
-    <footer class="footer mt-5 py-3 bg-dark text-light border-top">
+    <main class="claimr-shell">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer mt-5 py-3 border-top">
       <div class="container text-center">
         <div>&copy; 2026 Sustainable Resource and Business Development Enterprise</div>
         <div class="mt-2">
-          <a
-            href="https://tools.crypto-dreamr.com/give/mithril.donation/2/HBD/Buy%20a%20coffee"
-            target="_blank"
-            class="text-decoration-none text-light"
-          >
+          <a href="https://tools.crypto-dreamr.com/give/mithril.donation/2/HBD/Buy%20a%20coffee" target="_blank" class="text-decoration-none">
             <i class="bi bi-cup-hot"></i> Buy us a coffee
           </a>
         </div>
