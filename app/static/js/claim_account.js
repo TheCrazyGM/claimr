@@ -1,5 +1,5 @@
 // claim_account.js – frontend logic for the Claim Account page
-// Requires dhive loaded globally and optional Hive Keychain extension.
+// Requires pollen loaded globally and optional Hive Keychain extension.
 
 (function () {
   const $ = (sel) => document.querySelector(sel);
@@ -25,7 +25,7 @@
   const createBtn = $("#create-account-btn");
 
   let generatedKeys = null;
-  const client = new dhive.Client(["https://api.hive.blog"]);
+  const client = new pollen.Client(["https://api.hive.blog"]);
 
   // Toast helper using Bootstrap 5
   function showToast(message, type = "info", duration = 7000) {
@@ -166,14 +166,14 @@
     }
   }
 
-  // Helper: derive public & private keys from username + password (using dhive)
+  // Helper: derive public & private keys from username + password (using pollen)
   function generateKeysFromPassword(accountName, password) {
     const roles = ["owner", "active", "posting", "memo"];
     const out = {};
     out.account = accountName;
     out.password = password;
     roles.forEach((role) => {
-      const priv = dhive.PrivateKey.fromLogin(accountName, password, role);
+      const priv = pollen.PrivateKey.fromLogin(accountName, password, role);
       out[role] = {
         public: priv.createPublic().toString(),
         private: priv.toString(),
