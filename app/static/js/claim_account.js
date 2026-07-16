@@ -31,8 +31,11 @@
   function showToast(message, type = "info", duration = 7000) {
     const container = document.getElementById("toastContainer");
     if (!container || typeof bootstrap === "undefined") return;
+    const toastType = ["info", "success", "danger", "secondary", "warning"].includes(type)
+      ? type
+      : "info";
     const toastEl = document.createElement("div");
-    toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+    toastEl.className = `toast align-items-center text-bg-${toastType} border-0`;
     toastEl.setAttribute("role", "alert");
     toastEl.setAttribute("aria-live", "assertive");
     toastEl.setAttribute("aria-atomic", "true");
@@ -77,7 +80,7 @@
     alertDiv.appendChild(i);
     alertDiv.appendChild(document.createTextNode(msg));
 
-    el.innerHTML = "";
+    el.replaceChildren();
     el.appendChild(alertDiv);
   }
 
@@ -282,8 +285,11 @@
           resp.result && resp.result.id ? `https://hivehub.dev/tx/${resp.result.id}` : null;
         showToast(`Broadcast sent! Redirecting...`, "success");
         setTimeout(() => {
-          const url = `/claim-account/success?tx=${resp.result.id}&acc=${encodeURIComponent(newAcc)}`;
-          window.location.href = url;
+          const params = new URLSearchParams({
+            tx: resp.result.id,
+            acc: newAcc,
+          });
+          window.location.assign(`/claim-account/success?${params}`);
         }, 1500);
       } else {
         const msg =
@@ -321,8 +327,8 @@
     // clear values and status
     claimerInput.value = "";
     newUserInput.value = "";
-    claimerStatus.innerHTML = "";
-    newuserStatus.innerHTML = "";
+    claimerStatus.replaceChildren();
+    newuserStatus.replaceChildren();
 
     // hide sections
     passwordSection.style.display = "none";

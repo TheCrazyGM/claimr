@@ -24,8 +24,60 @@ document.addEventListener("DOMContentLoaded", function () {
     if (extraNode) {
       div.appendChild(extraNode);
     }
-    el.innerHTML = "";
+    el.replaceChildren();
     el.appendChild(div);
+  }
+
+  function addMetricRow(parent, label, value, valueClass = "fw-bold") {
+    const row = document.createElement("div");
+    row.className = "d-flex justify-content-between mb-1";
+    const labelEl = document.createElement("span");
+    labelEl.textContent = label;
+    const valueEl = document.createElement("span");
+    valueEl.className = valueClass;
+    valueEl.textContent = value;
+    row.append(labelEl, valueEl);
+    parent.appendChild(row);
+  }
+
+  function renderRcComparison(container, rcBefore, rcAfter, rcUsed, totalClaimCount, totalEstimatedCost, percentDiff) {
+    const card = document.createElement("div");
+    card.className = "card border-info shadow-sm rounded";
+    const body = document.createElement("div");
+    body.className = "card-body p-3";
+    const title = document.createElement("h6");
+    title.className = "card-title mb-2";
+    title.textContent = "RC Usage Details";
+    body.appendChild(title);
+    addMetricRow(body, "RC Before Claim:", rcBefore.toLocaleString());
+    addMetricRow(body, "RC After Claim:", rcAfter.toLocaleString());
+    addMetricRow(body, "Actual RC Used:", rcUsed.toLocaleString(), "fw-bold text-primary");
+    addMetricRow(
+      body,
+      `Estimated RC Cost (${totalClaimCount} claim${totalClaimCount > 1 ? "s" : ""}):`,
+      totalEstimatedCost.toLocaleString(),
+    );
+
+    const progress = document.createElement("div");
+    progress.className = "progress mt-2";
+    progress.title = "Actual vs Estimated";
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar bg-success";
+    progressBar.role = "progressbar";
+    progressBar.style.width = `${Math.min(percentDiff, 100)}%`;
+    progressBar.setAttribute("aria-valuenow", percentDiff);
+    progressBar.setAttribute("aria-valuemin", "0");
+    progressBar.setAttribute("aria-valuemax", "100");
+    progressBar.textContent = `${percentDiff}%`;
+    progress.appendChild(progressBar);
+    body.appendChild(progress);
+
+    const note = document.createElement("div");
+    note.className = "text-center small text-muted mt-1";
+    note.textContent = `Actual RC used is ${percentDiff}% of estimated cost`;
+    body.appendChild(note);
+    card.appendChild(body);
+    container.replaceChildren(card);
   }
 
   window.claimInProgress = window.claimInProgress || false;
@@ -90,40 +142,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     // Display detailed RC usage comparison in the dedicated section
                     const rcComparisonEl = document.getElementById("rc-usage-comparison");
-                    rcComparisonEl.innerHTML = `
-                                              <div class="card border-info shadow-sm rounded">
-                                                <div class="card-body p-3">
-                                                  <h6 class="card-title mb-2">RC Usage Details</h6>
-                                                  <div class="d-flex justify-content-between mb-1">
-                                                    <span>RC Before Claim:</span>
-                                                    <span class="fw-bold">${rcBefore.toLocaleString()}</span>
-                                                  </div>
-                                                  <div class="d-flex justify-content-between mb-1">
-                                                    <span>RC After Claim:</span>
-                                                    <span class="fw-bold">${rcAfter.toLocaleString()}</span>
-                                                  </div>
-                                                  <div class="d-flex justify-content-between mb-1">
-                                                    <span>Actual RC Used:</span>
-                                                    <span class="fw-bold text-primary">${rcUsed.toLocaleString()}</span>
-                                                  </div>
-                                                  <div class="d-flex justify-content-between mb-1">
-                                                    <span>Estimated RC Cost (${totalClaimCount} claim${totalClaimCount > 1 ? "s" : ""}):</span>
-                                                    <span class="fw-bold">${totalEstimatedCost.toLocaleString()}</span>
-                                                  </div>
-                                                  <div class="progress mt-2" title="Actual vs Estimated">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: ${Math.min(percentDiff, 100)}%" aria-valuenow="${percentDiff}" aria-valuemin="0" aria-valuemax="100">${percentDiff}%</div>
-                                                  </div>
-                                                  <div class="text-center small text-muted mt-1">Actual RC used is ${percentDiff}% of estimated cost</div>
-                                                </div>
-                                              </div>
-                                            `;
+                    renderRcComparison(
+                      rcComparisonEl,
+                      rcBefore,
+                      rcAfter,
+                      rcUsed,
+                      totalClaimCount,
+                      totalEstimatedCost,
+                      percentDiff,
+                    );
 
                     // Update the RC bar
                     const maxRc = data.rc.max_mana;
                     const percent = Math.round((100 * rcAfter) / maxRc);
 
                     const rcBarEl = document.getElementById("rc-bar");
-                    rcBarEl.innerHTML = "";
+                    rcBarEl.replaceChildren();
 
                     const progressDiv = document.createElement("div");
                     progressDiv.className = "progress";
@@ -185,8 +219,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const username = usernameInput.value.trim();
     if (!username) {
       showStatus("Please enter your Hive username to check RC.", "warning");
-      document.getElementById("rc-bar").innerHTML = "";
-      document.getElementById("rc-usage-comparison").innerHTML = "";
+      document.getElementById("rc-bar").replaceChildren();
+      document.getElementById("rc-usage-comparison").replaceChildren();
       return;
     }
     showStatus("Checking RC for " + username + "...", "info");
@@ -231,7 +265,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
               // Render progress bar
               const rcBarEl = document.getElementById("rc-bar");
-              rcBarEl.innerHTML = "";
+              rcBarEl.replaceChildren();
 
               const progressDiv = document.createElement("div");
               progressDiv.className = "progress";
@@ -298,16 +332,16 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch((err) => {
               showStatus("Error fetching RC cost data: " + err, "danger");
-              document.getElementById("rc-bar").innerHTML = "";
+              document.getElementById("rc-bar").replaceChildren();
             });
         } else {
           showStatus("Could not check RC: " + (data.message || "Unknown error"), "danger");
-          document.getElementById("rc-bar").innerHTML = "";
+          document.getElementById("rc-bar").replaceChildren();
         }
       })
       .catch((err) => {
         showStatus("Error checking RC: " + err, "danger");
-        document.getElementById("rc-bar").innerHTML = "";
+        document.getElementById("rc-bar").replaceChildren();
       });
   });
   countInput.addEventListener("input", function () {
