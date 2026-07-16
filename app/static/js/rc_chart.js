@@ -11,7 +11,7 @@
   let canvas;
   if (chartCanvas.tagName === "DIV") {
     canvas = document.createElement("canvas");
-    chartCanvas.innerHTML = "";
+    chartCanvas.replaceChildren();
     chartCanvas.appendChild(canvas);
     // Important for Chart.js responsiveness
     chartCanvas.style.position = "relative";
@@ -149,7 +149,10 @@
   function drawChart() {
     const data = prepareData();
     if (!data) {
-      chartCanvas.innerHTML = "<div class='text-center text-muted p-5'>No data available</div>";
+      const emptyState = document.createElement("div");
+      emptyState.className = "text-center text-muted p-5";
+      emptyState.textContent = "No data available";
+      chartCanvas.replaceChildren(emptyState);
       return;
     }
 
@@ -314,7 +317,10 @@
       })
       .catch((error) => {
         console.error("RC chart error:", error);
-        chartCanvas.innerHTML = "<p class='text-danger text-center'>Error loading chart data</p>";
+        const errorState = document.createElement("p");
+        errorState.className = "text-danger text-center";
+        errorState.textContent = "Error loading chart data";
+        chartCanvas.replaceChildren(errorState);
       });
   }
 
